@@ -93,8 +93,16 @@ export default function RequestForm() {
     try {
       setIsSubmitting(true);
       
-      // Convert amount to wei
+      // Validate amount
+      if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+        throw new Error("Please enter a valid amount");
+      }
+      
+      // Convert amount to wei using ethers parseEther
+      // This will properly format the amount for the blockchain
       const amountInWei = parseEther(amount);
+      
+      console.log("Sending amount to contract:", amountInWei.toString());
       
       // Call the requestLoan function from the contract using walletClient
       const hash = await walletClient.writeContract({
@@ -229,7 +237,7 @@ export default function RequestForm() {
                   onChange={(e) => setAmount(e.target.value)}
                   className="w-full bg-white/10 border border-white/20 rounded-lg py-3 pl-10 pr-4 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-secondary-yellow"
                   placeholder="Enter amount in ₹"
-                  min="100"
+                  min="0"
                   required
                 />
               </div>

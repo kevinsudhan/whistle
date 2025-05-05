@@ -2,19 +2,60 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import CountUp from "@/components/CountUp";
+import { FiAward, FiCheck, FiX, FiLock } from "react-icons/fi";
 
 // Dynamic imports for charts
 const PieChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 const LineChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
+// Define the request type
+interface LoanRequest {
+  id: string;
+  borrower: string;
+  purpose: string;
+  amount: number;
+  period: string;
+  stakers: number;
+}
+
 export default function CommunityDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [tokens] = useState(1250);
+  const [daoPassword, setDaoPassword] = useState("");
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [pendingRequests, setPendingRequests] = useState<LoanRequest[]>([
+    {
+      id: "req1",
+      borrower: "Rahul S.",
+      purpose: "Education Fees",
+      amount: 25000,
+      period: "2 months",
+      stakers: 3
+    },
+    {
+      id: "req2",
+      borrower: "Priya M.",
+      purpose: "Business Expansion",
+      amount: 50000,
+      period: "3 months",
+      stakers: 5
+    },
+    {
+      id: "req3",
+      borrower: "Ankit P.",
+      purpose: "Medical Emergency",
+      amount: 15000,
+      period: "1 month",
+      stakers: 2
+    }
+  ]);
+  const [approvedRequests, setApprovedRequests] = useState<LoanRequest[]>([]);
 
   // Mock data for charts and stats
   const loanStats = {
@@ -42,6 +83,38 @@ export default function CommunityDashboard() {
     { month: "Nov", amount: 0 },
     { month: "Dec", amount: 0 }
   ];
+
+  // Handle DAO tab click
+  const handleDaoClick = () => {
+    setIsPasswordModalOpen(true);
+  };
+
+  // Handle password submission
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (daoPassword === "123") {
+      setActiveTab("dao");
+      setIsPasswordModalOpen(false);
+      setPasswordError("");
+      setDaoPassword("");
+    } else {
+      setPasswordError("Incorrect password. Please try again.");
+    }
+  };
+
+  // Handle request approval
+  const handleApproveRequest = (requestId: string) => {
+    const requestToApprove = pendingRequests.find(req => req.id === requestId);
+    if (requestToApprove) {
+      setApprovedRequests([...approvedRequests, requestToApprove]);
+      setPendingRequests(pendingRequests.filter(req => req.id !== requestId));
+    }
+  };
+
+  // Handle request rejection
+  const handleRejectRequest = (requestId: string) => {
+    setPendingRequests(pendingRequests.filter(req => req.id !== requestId));
+  };
 
   // Pie chart options
   const pieChartOptions = {
@@ -272,10 +345,11 @@ export default function CommunityDashboard() {
               Dashboard
             </button>
             <button 
-              className={`py-3 px-6 font-medium text-lg ${activeTab === 'members' ? 'text-white border-b-2 border-secondary-yellow' : 'text-white/50'}`}
-              onClick={() => setActiveTab('members')}
+              className={`py-3 px-6 font-medium text-lg flex items-center gap-2 ${activeTab === 'dao' ? 'text-white border-b-2 border-secondary-yellow' : 'text-white/50'}`}
+              onClick={handleDaoClick}
             >
-              Members
+              <FiAward className="text-yellow-400" />
+              DAO
             </button>
             <button 
               className={`py-3 px-6 font-medium text-lg ${activeTab === 'history' ? 'text-white border-b-2 border-secondary-yellow' : 'text-white/50'}`}
@@ -285,126 +359,330 @@ export default function CommunityDashboard() {
             </button>
           </motion.div>
 
-          {/* Stats Cards */}
-          <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
-            variants={fadeIn}
-          >
-            <div className="glass p-6 rounded-xl">
-              <h3 className="text-lg font-medium text-white/70 mb-2">Loans Lended</h3>
-              <p className="text-3xl font-bold">
-                <CountUp end={loanStats.loansLended} duration={2.5} />
-              </p>
-            </div>
-            
-            <div className="glass p-6 rounded-xl">
-              <h3 className="text-lg font-medium text-white/70 mb-2">Total Amount</h3>
-              <p className="text-3xl font-bold">
-                <CountUp end={parseInt(loanStats.totalAmount.replace(/[^\d]/g, ""))} prefix="₹" duration={2.5} />
-              </p>
-            </div>
-            
-            <div className="glass p-6 rounded-xl">
-              <h3 className="text-lg font-medium text-white/70 mb-2">Total Stakers</h3>
-              <p className="text-3xl font-bold">
-                <CountUp end={loanStats.totalStakers} duration={2.5} />
-              </p>
-            </div>
-            
-            <div className="glass p-6 rounded-xl">
-              <h3 className="text-lg font-medium text-white/70 mb-2">Success Rate</h3>
-              <p className="text-3xl font-bold">
-                <CountUp 
-                  end={Math.round((loanStats.successfulStakes / loanStats.totalStakers) * 100)} 
-                  suffix="%" 
-                  duration={2.5} 
-                />
-              </p>
-            </div>
-          </motion.div>
+          {/* Dashboard Content */}
+          {activeTab === 'dashboard' && (
+            <>
+              {/* Stats Cards */}
+              <motion.div 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+                variants={fadeIn}
+              >
+                <div className="glass p-6 rounded-xl">
+                  <h3 className="text-lg font-medium text-white/70 mb-2">Loans Lended</h3>
+                  <p className="text-3xl font-bold">
+                    <CountUp end={loanStats.loansLended} duration={2.5} />
+                  </p>
+                </div>
+                
+                <div className="glass p-6 rounded-xl">
+                  <h3 className="text-lg font-medium text-white/70 mb-2">Total Amount</h3>
+                  <p className="text-3xl font-bold">
+                    <CountUp end={parseInt(loanStats.totalAmount.replace(/[^\d]/g, ""))} prefix="₹" duration={2.5} />
+                  </p>
+                </div>
+                
+                <div className="glass p-6 rounded-xl">
+                  <h3 className="text-lg font-medium text-white/70 mb-2">Total Stakers</h3>
+                  <p className="text-3xl font-bold">
+                    <CountUp end={loanStats.totalStakers} duration={2.5} />
+                  </p>
+                </div>
+                
+                <div className="glass p-6 rounded-xl">
+                  <h3 className="text-lg font-medium text-white/70 mb-2">Success Rate</h3>
+                  <p className="text-3xl font-bold">
+                    <CountUp 
+                      end={Math.round((loanStats.successfulStakes / loanStats.totalStakers) * 100)} 
+                      suffix="%" 
+                      duration={2.5} 
+                    />
+                  </p>
+                </div>
+              </motion.div>
 
-          {/* Charts Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* Pie Chart */}
-            <motion.div 
-              className="glass p-6 rounded-xl"
+              {/* Charts Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                {/* Pie Chart */}
+                <motion.div 
+                  className="glass p-6 rounded-xl"
+                  variants={fadeIn}
+                >
+                  <h3 className="text-xl font-bold mb-4">Loan Status</h3>
+                  <div className="h-80">
+                    {typeof window !== 'undefined' && (
+                      <PieChart
+                        options={pieChartOptions as any}
+                        series={pieChartSeries}
+                        type="donut"
+                        height="100%"
+                      />
+                    )}
+                  </div>
+                </motion.div>
+                
+                {/* Line Chart */}
+                <motion.div 
+                  className="glass p-6 rounded-xl"
+                  variants={fadeIn}
+                >
+                  <h3 className="text-xl font-bold mb-4">Monthly Lending</h3>
+                  <div className="h-80">
+                    {typeof window !== 'undefined' && (
+                      <LineChart
+                        options={lineChartOptions as any}
+                        series={lineChartSeries as any}
+                        type="area"
+                        height="100%"
+                      />
+                    )}
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* Stakes Section */}
+              <motion.div 
+                className="glass p-6 rounded-xl mb-8"
+                variants={fadeIn}
+              >
+                <h3 className="text-xl font-bold mb-4">Staking Performance</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="text-4xl font-bold mb-2">
+                      <CountUp end={loanStats.totalStakers} duration={2.5} />
+                    </div>
+                    <p className="text-white/70">Total Stakers</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="text-4xl font-bold mb-2 text-green-400">
+                      <CountUp end={loanStats.successfulStakes} duration={2.5} />
+                    </div>
+                    <p className="text-white/70">Successful Stakes</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="text-4xl font-bold mb-2 text-red-400">
+                      <CountUp end={loanStats.unsuccessfulStakes} duration={2.5} />
+                    </div>
+                    <p className="text-white/70">Unsuccessful Stakes</p>
+                  </div>
+                </div>
+                
+                <div className="mt-6 bg-white/10 rounded-full h-4 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-secondary-yellow to-secondary-blue"
+                    style={{ width: `${(loanStats.successfulStakes / loanStats.totalStakers) * 100}%` }}
+                  />
+                </div>
+                <div className="flex justify-between mt-2 text-sm">
+                  <span>0%</span>
+                  <span>{Math.round((loanStats.successfulStakes / loanStats.totalStakers) * 100)}%</span>
+                  <span>100%</span>
+                </div>
+              </motion.div>
+            </>
+          )}
+
+          {/* DAO Content */}
+          {activeTab === 'dao' && (
+            <>
+              <motion.div
+                className="glass p-6 rounded-xl mb-8"
+                variants={fadeIn}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <FiAward className="text-yellow-400 text-xl" />
+                  <h3 className="text-xl font-bold">DAO Admin Panel</h3>
+                </div>
+                <p className="text-white/70 mb-6">
+                  As a DAO admin, you can approve or reject loan requests from community members.
+                </p>
+
+                {/* Pending Requests */}
+                <h4 className="text-lg font-bold mb-4">Pending Requests</h4>
+                {pendingRequests.length === 0 ? (
+                  <p className="text-white/50 italic">No pending requests</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {pendingRequests.map((request) => (
+                      <div 
+                        key={request.id}
+                        className="bg-white/5 rounded-lg border border-white/10 overflow-hidden hover:bg-white/10 transition-colors"
+                      >
+                        <div className="p-4">
+                          <div className="mb-3">
+                            <h5 className="font-bold text-lg mb-1">{request.purpose}</h5>
+                            <p className="text-2xl font-bold text-secondary-yellow">₹{request.amount.toLocaleString()}</p>
+                          </div>
+                          
+                          <div className="flex justify-between mb-4">
+                            <div className="flex items-center gap-1">
+                              <Image 
+                                src="/images/token-icon.svg" 
+                                alt="SVCE Token" 
+                                width={16} 
+                                height={16} 
+                              />
+                              <span className="text-sm text-white/70">1250 Tokens</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-sm text-white/70">{request.stakers} Stakers</span>
+                            </div>
+                          </div>
+                          
+                          <div className="text-sm text-white/70 mb-4">
+                            <span className="block">Period: {request.period}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex border-t border-white/10">
+                          <button
+                            onClick={() => handleApproveRequest(request.id)}
+                            className="flex-1 py-3 text-center text-green-400 hover:bg-green-500/20 transition-colors"
+                          >
+                            Approve
+                          </button>
+                          <div className="w-px bg-white/10"></div>
+                          <button
+                            onClick={() => handleRejectRequest(request.id)}
+                            className="flex-1 py-3 text-center text-red-400 hover:bg-red-500/20 transition-colors"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+
+              {/* Approved Requests */}
+              <motion.div
+                className="glass p-6 rounded-xl mb-8"
+                variants={fadeIn}
+              >
+                <h3 className="text-xl font-bold mb-4">Approved Requests</h3>
+                {approvedRequests.length === 0 ? (
+                  <p className="text-white/50 italic">No approved requests yet</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {approvedRequests.map((request) => (
+                      <div 
+                        key={request.id}
+                        className="bg-white/5 rounded-lg border border-white/10 overflow-hidden"
+                      >
+                        <div className="p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <h5 className="font-bold text-lg mb-1">{request.purpose}</h5>
+                              <p className="text-2xl font-bold text-secondary-yellow">₹{request.amount.toLocaleString()}</p>
+                            </div>
+                            <span className="px-3 py-1 rounded-full text-xs bg-green-500/20 text-green-400">
+                              Approved
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between mb-4">
+                            <div className="flex items-center gap-1">
+                              <Image 
+                                src="/images/token-icon.svg" 
+                                alt="SVCE Token" 
+                                width={16} 
+                                height={16} 
+                              />
+                              <span className="text-sm text-white/70">1250 Tokens</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-sm text-white/70">{request.stakers} Stakers</span>
+                            </div>
+                          </div>
+                          
+                          <div className="text-sm text-white/70">
+                            <span className="block">Period: {request.period}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            </>
+          )}
+
+          {/* History Content */}
+          {activeTab === 'history' && (
+            <motion.div
+              className="glass p-6 rounded-xl mb-8"
               variants={fadeIn}
             >
-              <h3 className="text-xl font-bold mb-4">Loan Status</h3>
-              <div className="h-80">
-                {typeof window !== 'undefined' && (
-                  <PieChart
-                    options={pieChartOptions as any}
-                    series={pieChartSeries}
-                    type="donut"
-                    height="100%"
-                  />
-                )}
-              </div>
+              <h3 className="text-xl font-bold mb-4">Transaction History</h3>
+              <p className="text-white/70">
+                Your transaction history will appear here.
+              </p>
             </motion.div>
-            
-            {/* Line Chart */}
-            <motion.div 
-              className="glass p-6 rounded-xl"
-              variants={fadeIn}
-            >
-              <h3 className="text-xl font-bold mb-4">Monthly Lending</h3>
-              <div className="h-80">
-                {typeof window !== 'undefined' && (
-                  <LineChart
-                    options={lineChartOptions as any}
-                    series={lineChartSeries as any}
-                    type="area"
-                    height="100%"
-                  />
-                )}
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Stakes Section */}
-          <motion.div 
-            className="glass p-6 rounded-xl mb-8"
-            variants={fadeIn}
-          >
-            <h3 className="text-xl font-bold mb-4">Staking Performance</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="text-4xl font-bold mb-2">
-                  <CountUp end={loanStats.totalStakers} duration={2.5} />
-                </div>
-                <p className="text-white/70">Total Stakers</p>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-4xl font-bold mb-2 text-green-400">
-                  <CountUp end={loanStats.successfulStakes} duration={2.5} />
-                </div>
-                <p className="text-white/70">Successful Stakes</p>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-4xl font-bold mb-2 text-red-400">
-                  <CountUp end={loanStats.unsuccessfulStakes} duration={2.5} />
-                </div>
-                <p className="text-white/70">Unsuccessful Stakes</p>
-              </div>
-            </div>
-            
-            <div className="mt-6 bg-white/10 rounded-full h-4 overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-secondary-yellow to-secondary-blue"
-                style={{ width: `${(loanStats.successfulStakes / loanStats.totalStakers) * 100}%` }}
-              />
-            </div>
-            <div className="flex justify-between mt-2 text-sm">
-              <span>0%</span>
-              <span>{Math.round((loanStats.successfulStakes / loanStats.totalStakers) * 100)}%</span>
-              <span>100%</span>
-            </div>
-          </motion.div>
+          )}
         </div>
       </motion.main>
+
+      {/* Password Modal */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">
+          <motion.div 
+            className="glass p-6 rounded-xl w-full max-w-md"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <FiLock className="text-secondary-yellow" size={20} />
+              <h3 className="text-xl font-bold">DAO Access</h3>
+            </div>
+            
+            <p className="text-white/70 mb-6">
+              Please enter the DAO password to access the admin panel.
+            </p>
+            
+            <form onSubmit={handlePasswordSubmit}>
+              {passwordError && (
+                <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-white text-sm">
+                  {passwordError}
+                </div>
+              )}
+              
+              <div className="mb-4">
+                <input
+                  type="password"
+                  value={daoPassword}
+                  onChange={(e) => setDaoPassword(e.target.value)}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg py-3 px-4 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-secondary-yellow"
+                  placeholder="Enter password"
+                  required
+                />
+              </div>
+              
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPasswordModalOpen(false);
+                    setPasswordError("");
+                    setDaoPassword("");
+                  }}
+                  className="py-2 px-4 rounded-lg border border-white/20 text-white/70 hover:bg-white/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="whistle-button-primary py-2 px-6 rounded-lg"
+                >
+                  Access
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
 
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-md border-t border-white/10 py-4 px-6 z-20">
@@ -420,7 +698,7 @@ export default function CommunityDashboard() {
             onClick={() => router.push('/lend')}
             className="whistle-button-secondary rounded-full px-8 py-3 text-base font-bold flex-1"
           >
-            Lend
+            Lend/Stake
           </button>
         </div>
       </div>

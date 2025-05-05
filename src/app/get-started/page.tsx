@@ -3,9 +3,9 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { FiMail } from "react-icons/fi";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useConnect, useSwitchChain } from "wagmi";
+import { useConnect, useSwitchChain, useAccount } from "wagmi";
 import { seiAtlantic2 } from "@/config/chains";
 
 export default function GetStarted() {
@@ -14,9 +14,11 @@ export default function GetStarted() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [connectionSuccess, setConnectionSuccess] = useState(false);
   
   const { connect, connectors, isPending } = useConnect();
-  const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
+  const { switchChain, isPending: isSwitchingChain, isSuccess: isSwitchSuccess } = useSwitchChain();
+  const { isConnected, chainId } = useAccount();
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -37,9 +39,22 @@ export default function GetStarted() {
     }
   };
 
+  // Check if wallet is connected and on the right chain
+  useEffect(() => {
+    if (isConnected && chainId === seiAtlantic2.id && connectionSuccess) {
+      // Add a small delay to ensure UI updates before navigation
+      const timer = setTimeout(() => {
+        router.push('/my-communities');
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isConnected, chainId, connectionSuccess, router]);
+
   const handleConnectWallet = async () => {
     setIsConnecting(true);
     setConnectionError(null);
+    setConnectionSuccess(false);
     
     try {
       // Find the MetaMask connector
@@ -52,14 +67,33 @@ export default function GetStarted() {
       // Connect to MetaMask
       await connect({ connector: metaMaskConnector });
       
+      // Wait a moment to ensure connection is established
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Check if we're connected
+      if (!isConnected) {
+        throw new Error("Failed to connect to MetaMask. Please try again.");
+      }
+      
       // Switch to SEI Atlantic-2 testnet
       await switchChain({ chainId: seiAtlantic2.id });
       
-      // Navigate to communities page on success
-      router.push('/my-communities');
+      // Wait a moment to ensure chain switch is complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Check if we're on the right chain
+      if (chainId !== seiAtlantic2.id) {
+        throw new Error("Failed to switch to SEI Atlantic-2 network. Please try again.");
+      }
+      
+      // Mark connection as successful
+      setConnectionSuccess(true);
+      
+      // Navigation is now handled by the useEffect
     } catch (error) {
       console.error("Wallet connection error:", error);
       setConnectionError(error instanceof Error ? error.message : "Failed to connect wallet");
+      setConnectionSuccess(false);
     } finally {
       setIsConnecting(false);
     }
@@ -148,6 +182,13 @@ export default function GetStarted() {
                 <div className="w-64 h-64 bg-white/10 rounded-lg mb-6 flex items-center justify-center border-2 border-dashed border-white/30">
                   {isConnecting || isPending || isSwitchingChain ? (
                     <div className="animate-spin w-12 h-12 border-4 border-secondary-yellow border-t-transparent rounded-full"></div>
+                  ) : connectionSuccess ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <svg className="w-16 h-16 text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                      <p className="text-green-400">Successfully connected!</p>
+                    </div>
                   ) : (
                     <Image 
                       src="/images/token-icon.svg" 
@@ -162,16 +203,23 @@ export default function GetStarted() {
                     {connectionError}
                   </div>
                 )}
+                {connectionSuccess && (
+                  <div className="bg-green-500/20 border border-green-500 p-3 rounded-lg mb-4 text-sm text-white">
+                    Wallet connected successfully! Redirecting...
+                  </div>
+                )}
                 <button 
                   onClick={handleConnectWallet}
-                  disabled={isConnecting || isPending || isSwitchingChain}
+                  disabled={isConnecting || isPending || isSwitchingChain || connectionSuccess}
                   className="whistle-button-primary w-full py-3 rounded-full text-lg mb-4 flex items-center justify-center gap-2"
                 >
                   {isConnecting || isPending 
                     ? "Connecting..." 
                     : isSwitchingChain 
                       ? "Switching to SEI Network..." 
-                      : "Connect MetaMask Wallet"}
+                      : connectionSuccess
+                        ? "Connected!"
+                        : "Connect MetaMask Wallet"}
                 </button>
                 <p className="text-xs text-white/50 text-center">
                   Will connect to SEI Atlantic-2 Testnet (Chain ID: 1328)
