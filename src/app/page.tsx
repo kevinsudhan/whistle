@@ -136,44 +136,6 @@ const Particle = ({
   );
 };
 
-// Custom loading animation component
-const LoadingAnimation = () => {
-  return (
-    <div className="relative w-20 h-20">
-      {/* Outer spinning circle */}
-      <motion.div
-        className="absolute inset-0 rounded-full border-4 border-transparent border-t-secondary-yellow border-r-secondary-blue"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-      />
-      
-      {/* Inner pulsing circle */}
-      <motion.div
-        className="absolute inset-2 bg-gradient-to-r from-secondary-yellow to-secondary-blue rounded-full"
-        animate={{ 
-          scale: [0.8, 1.1, 0.8],
-          opacity: [0.7, 1, 0.7]
-        }}
-        transition={{ 
-          duration: 2, 
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      />
-      
-      {/* Center dot */}
-      <motion.div
-        className="absolute inset-0 flex items-center justify-center"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-      >
-        <div className="w-3 h-3 bg-white rounded-full" />
-      </motion.div>
-    </div>
-  );
-};
-
 export default function Home() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);

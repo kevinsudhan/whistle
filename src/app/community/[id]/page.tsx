@@ -174,10 +174,6 @@ export default function CommunityDashboard() {
     }
   };
 
-  const handleNavigation = (path: string) => {
-    router.push(path);
-  };
-
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Background */}
