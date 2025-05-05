@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
+import { WagmiProviderWrapper } from "@/providers/wagmi-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +37,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/app-icon.svg" />
       </head>
       <body>
-        {children}
+        <WagmiProviderWrapper>
+          {children}
+        </WagmiProviderWrapper>
         <Script src="/register-sw.js" strategy="afterInteractive" />
       </body>
     </html>

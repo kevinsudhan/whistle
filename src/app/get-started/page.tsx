@@ -5,12 +5,18 @@ import { motion } from "framer-motion";
 import { FiMail } from "react-icons/fi";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConnect, useSwitchChain } from "wagmi";
+import { seiAtlantic2 } from "@/config/chains";
 
 export default function GetStarted() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  
+  const { connect, connectors, isPending } = useConnect();
+  const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -31,13 +37,32 @@ export default function GetStarted() {
     }
   };
 
-  const handleConnectWallet = () => {
+  const handleConnectWallet = async () => {
     setIsConnecting(true);
-    // Simulate connection process
-    setTimeout(() => {
-      setIsConnecting(false);
+    setConnectionError(null);
+    
+    try {
+      // Find the MetaMask connector
+      const metaMaskConnector = connectors.find(c => c.name === 'MetaMask');
+      
+      if (!metaMaskConnector) {
+        throw new Error("MetaMask connector not found. Please install MetaMask extension.");
+      }
+      
+      // Connect to MetaMask
+      await connect({ connector: metaMaskConnector });
+      
+      // Switch to SEI Atlantic-2 testnet
+      await switchChain({ chainId: seiAtlantic2.id });
+      
+      // Navigate to communities page on success
       router.push('/my-communities');
-    }, 2000);
+    } catch (error) {
+      console.error("Wallet connection error:", error);
+      setConnectionError(error instanceof Error ? error.message : "Failed to connect wallet");
+    } finally {
+      setIsConnecting(false);
+    }
   };
 
   const handleGmailLogin = (e: React.FormEvent) => {
@@ -121,7 +146,7 @@ export default function GetStarted() {
             <div className="w-full max-w-md">
               <div className="glass p-8 rounded-xl flex flex-col items-center">
                 <div className="w-64 h-64 bg-white/10 rounded-lg mb-6 flex items-center justify-center border-2 border-dashed border-white/30">
-                  {isConnecting ? (
+                  {isConnecting || isPending || isSwitchingChain ? (
                     <div className="animate-spin w-12 h-12 border-4 border-secondary-yellow border-t-transparent rounded-full"></div>
                   ) : (
                     <Image 
@@ -132,13 +157,25 @@ export default function GetStarted() {
                     />
                   )}
                 </div>
+                {connectionError && (
+                  <div className="bg-red-500/20 border border-red-500 p-3 rounded-lg mb-4 text-sm text-white">
+                    {connectionError}
+                  </div>
+                )}
                 <button 
                   onClick={handleConnectWallet}
-                  disabled={isConnecting}
+                  disabled={isConnecting || isPending || isSwitchingChain}
                   className="whistle-button-primary w-full py-3 rounded-full text-lg mb-4 flex items-center justify-center gap-2"
                 >
-                  {isConnecting ? "Connecting..." : "Connect MetaMask Wallet"}
+                  {isConnecting || isPending 
+                    ? "Connecting..." 
+                    : isSwitchingChain 
+                      ? "Switching to SEI Network..." 
+                      : "Connect MetaMask Wallet"}
                 </button>
+                <p className="text-xs text-white/50 text-center">
+                  Will connect to SEI Atlantic-2 Testnet (Chain ID: 1328)
+                </p>
               </div>
             </div>
 

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import CountUp from "@/components/CountUp";
 
 // Dynamic imports for charts
 const PieChart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -291,22 +292,34 @@ export default function CommunityDashboard() {
           >
             <div className="glass p-6 rounded-xl">
               <h3 className="text-lg font-medium text-white/70 mb-2">Loans Lended</h3>
-              <p className="text-3xl font-bold">{loanStats.loansLended}</p>
+              <p className="text-3xl font-bold">
+                <CountUp end={loanStats.loansLended} duration={2.5} />
+              </p>
             </div>
             
             <div className="glass p-6 rounded-xl">
               <h3 className="text-lg font-medium text-white/70 mb-2">Total Amount</h3>
-              <p className="text-3xl font-bold">{loanStats.totalAmount}</p>
+              <p className="text-3xl font-bold">
+                <CountUp end={parseInt(loanStats.totalAmount.replace(/[^\d]/g, ""))} prefix="₹" duration={2.5} />
+              </p>
             </div>
             
             <div className="glass p-6 rounded-xl">
               <h3 className="text-lg font-medium text-white/70 mb-2">Total Stakers</h3>
-              <p className="text-3xl font-bold">{loanStats.totalStakers}</p>
+              <p className="text-3xl font-bold">
+                <CountUp end={loanStats.totalStakers} duration={2.5} />
+              </p>
             </div>
             
             <div className="glass p-6 rounded-xl">
               <h3 className="text-lg font-medium text-white/70 mb-2">Success Rate</h3>
-              <p className="text-3xl font-bold">{Math.round((loanStats.successfulStakes / loanStats.totalStakers) * 100)}%</p>
+              <p className="text-3xl font-bold">
+                <CountUp 
+                  end={Math.round((loanStats.successfulStakes / loanStats.totalStakers) * 100)} 
+                  suffix="%" 
+                  duration={2.5} 
+                />
+              </p>
             </div>
           </motion.div>
 
@@ -357,17 +370,23 @@ export default function CommunityDashboard() {
             <h3 className="text-xl font-bold mb-4">Staking Performance</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center">
-                <div className="text-4xl font-bold mb-2">{loanStats.totalStakers}</div>
+                <div className="text-4xl font-bold mb-2">
+                  <CountUp end={loanStats.totalStakers} duration={2.5} />
+                </div>
                 <p className="text-white/70">Total Stakers</p>
               </div>
               
               <div className="text-center">
-                <div className="text-4xl font-bold mb-2 text-green-400">{loanStats.successfulStakes}</div>
+                <div className="text-4xl font-bold mb-2 text-green-400">
+                  <CountUp end={loanStats.successfulStakes} duration={2.5} />
+                </div>
                 <p className="text-white/70">Successful Stakes</p>
               </div>
               
               <div className="text-center">
-                <div className="text-4xl font-bold mb-2 text-red-400">{loanStats.unsuccessfulStakes}</div>
+                <div className="text-4xl font-bold mb-2 text-red-400">
+                  <CountUp end={loanStats.unsuccessfulStakes} duration={2.5} />
+                </div>
                 <p className="text-white/70">Unsuccessful Stakes</p>
               </div>
             </div>

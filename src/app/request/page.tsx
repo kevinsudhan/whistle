@@ -5,6 +5,9 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { FiArrowLeft, FiCalendar, FiInfo } from "react-icons/fi";
+import { useAccount, useWalletClient } from "wagmi";
+import { WS_Abi, WS_CONTRACT_ADDRESS } from "@/config/WS_Abi";
+import { parseEther } from "ethers";
 
 // Dynamic import of Lottie component
 const LottiePlayer = dynamic(() => import("lottie-react"), { ssr: false });
@@ -16,6 +19,10 @@ export default function RequestForm() {
   const [loanPeriod, setLoanPeriod] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [animationData, setAnimationData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  
+  const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
 
   // Current interest rate
   const interestRate = 8.5;
@@ -69,14 +76,47 @@ export default function RequestForm() {
     loadAnimation();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setError(null);
     
-    // Navigate after animation completes
-    setTimeout(() => {
-      router.push('/community/svce');
-    }, 3000);
+    if (!isConnected || !address) {
+      setError("Please connect your wallet first");
+      return;
+    }
+    
+    if (!walletClient) {
+      setError("Wallet client not available");
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Convert amount to wei
+      const amountInWei = parseEther(amount);
+      
+      // Call the requestLoan function from the contract using walletClient
+      const hash = await walletClient.writeContract({
+        address: WS_CONTRACT_ADDRESS as `0x${string}`,
+        abi: WS_Abi,
+        functionName: 'requestLoan',
+        args: [amountInWei, purpose],
+        account: address
+      });
+      
+      console.log("Transaction hash:", hash);
+      
+      // Navigate after animation completes
+      setTimeout(() => {
+        router.push('/community/svce');
+      }, 3000);
+      
+    } catch (err) {
+      console.error("Error submitting loan request:", err);
+      setError(err instanceof Error ? err.message : "Failed to submit loan request. Please try again.");
+      setIsSubmitting(false);
+    }
   };
 
   // Animation variants
@@ -154,6 +194,13 @@ export default function RequestForm() {
             variants={fadeIn}
           >
             <h2 className="text-xl font-bold mb-6">Loan Request Form</h2>
+            
+            {/* Error message */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-white text-sm">
+                {error}
+              </div>
+            )}
             
             {/* Purpose */}
             <div className="mb-6">
@@ -233,9 +280,9 @@ export default function RequestForm() {
             <button 
               type="submit"
               className="w-full whistle-button-primary py-3 rounded-lg text-base font-bold"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !walletClient}
             >
-              Send for Approval
+              {isSubmitting ? "Processing..." : "Send for Approval"}
             </button>
           </motion.form>
         </div>

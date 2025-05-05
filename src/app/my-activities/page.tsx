@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { FiArrowLeft, FiClock, FiCheck, FiArrowUp, FiArrowDown } from "react-icons/fi";
+import CountUp from "@/components/CountUp";
 
 // Dynamic imports for charts
 const BarChart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -281,17 +282,23 @@ export default function MyActivities() {
           >
             <div className="glass p-6 rounded-xl">
               <h3 className="text-lg font-medium text-white/70 mb-2">Total Lent</h3>
-              <p className="text-3xl font-bold">₹35,000</p>
+              <p className="text-3xl font-bold">
+                <CountUp end={35000} prefix="₹" duration={2.5} />
+              </p>
             </div>
             
             <div className="glass p-6 rounded-xl">
               <h3 className="text-lg font-medium text-white/70 mb-2">Total Borrowed</h3>
-              <p className="text-3xl font-bold">₹45,000</p>
+              <p className="text-3xl font-bold">
+                <CountUp end={45000} prefix="₹" duration={2.5} />
+              </p>
             </div>
             
             <div className="glass p-6 rounded-xl">
               <h3 className="text-lg font-medium text-white/70 mb-2">Interest Earned</h3>
-              <p className="text-3xl font-bold">₹9,200</p>
+              <p className="text-3xl font-bold">
+                <CountUp end={9200} prefix="₹" duration={2.5} />
+              </p>
             </div>
           </motion.div>
 
