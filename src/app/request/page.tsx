@@ -1,12 +1,10 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { FiArrowLeft, FiDollarSign, FiCalendar, FiInfo } from "react-icons/fi";
+import { FiArrowLeft, FiCalendar, FiInfo } from "react-icons/fi";
 
 // Dynamic import of Lottie component
 const LottiePlayer = dynamic(() => import("lottie-react"), { ssr: false });

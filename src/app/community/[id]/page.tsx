@@ -1,21 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { FiHome, FiActivity, FiDollarSign, FiCreditCard } from "react-icons/fi";
 
 // Dynamic imports for charts
 const PieChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 const LineChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
-export default function CommunityDashboard({ params }: { params: { id: string } }) {
+export default function CommunityDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [tokens, setTokens] = useState(1250);
+  const [tokens] = useState(1250);
 
   // Mock data for charts and stats
   const loanStats = {

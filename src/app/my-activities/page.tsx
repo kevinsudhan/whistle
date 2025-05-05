@@ -1,12 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { FiArrowLeft, FiClock, FiCheck, FiX, FiArrowUp, FiArrowDown } from "react-icons/fi";
+import { FiArrowLeft, FiClock, FiCheck, FiArrowUp, FiArrowDown } from "react-icons/fi";
 
 // Dynamic imports for charts
 const BarChart = dynamic(() => import('react-apexcharts'), { ssr: false });
