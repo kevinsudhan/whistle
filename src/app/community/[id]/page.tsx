@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import CountUp from "@/components/CountUp";
-import { FiAward, FiCheck, FiX, FiLock } from "react-icons/fi";
+import { FiAward, FiCheck, FiX, FiLock, FiDatabase, FiSearch } from "react-icons/fi";
 
 // Dynamic imports for charts
 const PieChart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -21,6 +21,18 @@ interface LoanRequest {
   period: string;
   stakers: number;
 }
+
+// Define the loan details type
+interface LoanDetails {
+  amount: bigint;
+  startTime: bigint;
+  repaymentAmount: bigint;
+  isRepaid: boolean;
+  description: string;
+}
+
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import { WS_Abi, WS_CONTRACT_ADDRESS } from "@/config/WS_Abi";
 
 export default function CommunityDashboard() {
   const router = useRouter();
@@ -56,6 +68,49 @@ export default function CommunityDashboard() {
     }
   ]);
   const [approvedRequests, setApprovedRequests] = useState<LoanRequest[]>([]);
+  const [loanRequesters, setLoanRequesters] = useState<string[]>([]);
+  const [selectedRequester, setSelectedRequester] = useState<string>("");
+  const [loanDetails, setLoanDetails] = useState<LoanDetails | null>(null);
+  const [loanStatus, setLoanStatus] = useState<{amount: bigint, repaymentAmount: bigint, isRepaid: boolean} | null>(null);
+  const [interestRate, setInterestRate] = useState<bigint | null>(null);
+  const [isLoadingRequesters, setIsLoadingRequesters] = useState(false);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+  const [isLoadingRate, setIsLoadingRate] = useState(false);
+  const [requesterInput, setRequesterInput] = useState("");
+  const [onChainError, setOnChainError] = useState("");
+  
+  const { address, isConnected } = useAccount();
+  
+  // Read contract data for loan requesters
+  const { data: contractLoanRequesters, refetch: refetchLoanRequesters } = useReadContract({
+    address: WS_CONTRACT_ADDRESS as `0x${string}`,
+    abi: WS_Abi,
+    functionName: 'getAllLoanRequesters',
+  });
+  
+  // Read contract data for loan details
+  const { data: contractLoanDetails, refetch: refetchLoanDetails } = useReadContract({
+    address: WS_CONTRACT_ADDRESS as `0x${string}`,
+    abi: WS_Abi,
+    functionName: 'getLoanDetails',
+    args: selectedRequester ? [selectedRequester as `0x${string}`] : undefined,
+  });
+  
+  // Read contract data for loan status
+  const { data: contractLoanStatus, refetch: refetchLoanStatus } = useReadContract({
+    address: WS_CONTRACT_ADDRESS as `0x${string}`,
+    abi: WS_Abi,
+    functionName: 'getLoanStatus',
+    args: selectedRequester ? [selectedRequester as `0x${string}`] : undefined,
+  });
+  
+  // Read contract data for interest rate
+  const { data: contractInterestRate, refetch: refetchInterestRate } = useReadContract({
+    address: WS_CONTRACT_ADDRESS as `0x${string}`,
+    abi: WS_Abi,
+    functionName: 'getInterestRate',
+  });
 
   // Mock data for charts and stats
   const loanStats = {
@@ -114,6 +169,125 @@ export default function CommunityDashboard() {
   // Handle request rejection
   const handleRejectRequest = (requestId: string) => {
     setPendingRequests(pendingRequests.filter(req => req.id !== requestId));
+  };
+
+  // Function to fetch loan requesters
+  const fetchLoanRequesters = async () => {
+    setIsLoadingRequesters(true);
+    setOnChainError("");
+    
+    try {
+      const result = await refetchLoanRequesters();
+      if (result.data) {
+        // Filter out zero addresses
+        const validRequesters = (result.data as string[]).filter(
+          addr => addr !== '0x0000000000000000000000000000000000000000'
+        );
+        setLoanRequesters(validRequesters);
+      } else {
+        setOnChainError("Failed to fetch loan requesters");
+      }
+    } catch (err) {
+      console.error("Error fetching loan requesters:", err);
+      setOnChainError("Error fetching loan requesters. Please try again.");
+    } finally {
+      setIsLoadingRequesters(false);
+    }
+  };
+  
+  // Function to fetch loan details for a specific requester
+  const fetchLoanDetails = async () => {
+    if (!selectedRequester || !selectedRequester.startsWith('0x')) {
+      setOnChainError("Please enter a valid Ethereum address");
+      return;
+    }
+    
+    setIsLoadingDetails(true);
+    setOnChainError("");
+    
+    try {
+      const result = await refetchLoanDetails();
+      if (result.data) {
+        const details = result.data as [bigint, bigint, bigint, boolean, string];
+        setLoanDetails({
+          amount: details[0],
+          startTime: details[1],
+          repaymentAmount: details[2],
+          isRepaid: details[3],
+          description: details[4]
+        });
+      } else {
+        setOnChainError("Failed to fetch loan details");
+      }
+    } catch (err) {
+      console.error("Error fetching loan details:", err);
+      setOnChainError("Error fetching loan details. Please try again.");
+    } finally {
+      setIsLoadingDetails(false);
+    }
+  };
+  
+  // Function to fetch loan status for a specific requester
+  const fetchLoanStatus = async () => {
+    if (!selectedRequester || !selectedRequester.startsWith('0x')) {
+      setOnChainError("Please enter a valid Ethereum address");
+      return;
+    }
+    
+    setIsLoadingStatus(true);
+    setOnChainError("");
+    
+    try {
+      const result = await refetchLoanStatus();
+      if (result.data) {
+        const status = result.data as [bigint, bigint, boolean];
+        setLoanStatus({
+          amount: status[0],
+          repaymentAmount: status[1],
+          isRepaid: status[2]
+        });
+      } else {
+        setOnChainError("Failed to fetch loan status");
+      }
+    } catch (err) {
+      console.error("Error fetching loan status:", err);
+      setOnChainError("Error fetching loan status. Please try again.");
+    } finally {
+      setIsLoadingStatus(false);
+    }
+  };
+  
+  // Function to fetch interest rate
+  const fetchInterestRate = async () => {
+    setIsLoadingRate(true);
+    setOnChainError("");
+    
+    try {
+      const result = await refetchInterestRate();
+      if (result.data) {
+        setInterestRate(result.data as bigint);
+      } else {
+        setOnChainError("Failed to fetch interest rate");
+      }
+    } catch (err) {
+      console.error("Error fetching interest rate:", err);
+      setOnChainError("Error fetching interest rate. Please try again.");
+    } finally {
+      setIsLoadingRate(false);
+    }
+  };
+  
+  // Handle requester selection
+  const handleRequesterSelect = (requester: string) => {
+    setSelectedRequester(requester);
+    setRequesterInput(requester);
+  };
+  
+  // Handle manual requester input
+  const handleRequesterInputSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSelectedRequester(requesterInput);
+    fetchLoanDetails();
   };
 
   // Pie chart options
@@ -290,8 +464,8 @@ export default function CommunityDashboard() {
               />
               <span className="ml-2 font-bold">{tokens}</span>
             </div>
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-              <span className="text-sm font-bold">KD</span>
+            <div className="flex items-center gap-1">
+              <span className="text-sm text-white/70">KD</span>
             </div>
           </div>
         </div>
@@ -355,7 +529,7 @@ export default function CommunityDashboard() {
               className={`py-3 px-6 font-medium text-lg ${activeTab === 'history' ? 'text-white border-b-2 border-secondary-yellow' : 'text-white/50'}`}
               onClick={() => setActiveTab('history')}
             >
-              History
+              On-chain Activities
             </button>
           </motion.div>
 
@@ -611,15 +785,280 @@ export default function CommunityDashboard() {
 
           {/* History Content */}
           {activeTab === 'history' && (
-            <motion.div
-              className="glass p-6 rounded-xl mb-8"
-              variants={fadeIn}
-            >
-              <h3 className="text-xl font-bold mb-4">Transaction History</h3>
-              <p className="text-white/70">
-                Your transaction history will appear here.
-              </p>
-            </motion.div>
+            <>
+              <motion.div
+                className="glass p-6 rounded-xl mb-8"
+                variants={fadeIn}
+              >
+                <div className="flex items-center gap-2 mb-6">
+                  <FiDatabase className="text-secondary-yellow" size={20} />
+                  <h3 className="text-xl font-bold">On-chain Activities</h3>
+                </div>
+                
+                {onChainError && (
+                  <div className="mb-6 p-3 bg-red-500/20 border border-red-500 rounded-lg text-white text-sm">
+                    {onChainError}
+                  </div>
+                )}
+                
+                {/* Interest Rate Section */}
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-bold">Current Interest Rate</h4>
+                    <button
+                      onClick={fetchInterestRate}
+                      className="whistle-button-primary py-2 px-6 rounded-lg flex items-center gap-2"
+                      disabled={isLoadingRate}
+                    >
+                      {isLoadingRate ? (
+                        <>
+                          <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                          <span>Loading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FiDatabase size={16} />
+                          <span>Fetch Interest Rate</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  
+                  <div className="bg-white/5 rounded-lg border border-white/10 p-6">
+                    {interestRate !== null ? (
+                      <div className="flex flex-col items-center">
+                        <div className="text-5xl font-bold text-secondary-yellow mb-2">
+                          {Number(interestRate)}%
+                        </div>
+                        <p className="text-white/70">Current loan interest rate</p>
+                      </div>
+                    ) : (
+                      <div className="text-center text-white/50 italic">
+                        {isLoadingRate ? "Loading interest rate..." : "Click the button above to fetch the current interest rate."}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="mb-8">
+                  <h4 className="text-lg font-bold mb-4">Loan Requesters</h4>
+                  <div className="flex gap-4 mb-4">
+                    <button
+                      onClick={fetchLoanRequesters}
+                      className="whistle-button-primary py-2 px-6 rounded-lg flex items-center gap-2"
+                      disabled={isLoadingRequesters}
+                    >
+                      {isLoadingRequesters ? (
+                        <>
+                          <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                          <span>Loading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FiDatabase size={16} />
+                          <span>Fetch Loan Requesters</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  
+                  {loanRequesters.length > 0 ? (
+                    <div className="bg-white/5 rounded-lg border border-white/10 p-4">
+                      <h5 className="font-bold mb-3">Found {loanRequesters.length} Loan Requesters</h5>
+                      <div className="max-h-60 overflow-y-auto">
+                        {loanRequesters.map((requester, index) => (
+                          <div 
+                            key={index}
+                            className={`p-3 mb-2 rounded-lg cursor-pointer transition-colors ${
+                              selectedRequester === requester 
+                                ? 'bg-secondary-yellow/20 border border-secondary-yellow/50' 
+                                : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                            }`}
+                            onClick={() => handleRequesterSelect(requester)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-mono text-sm">{requester}</span>
+                              <div className="flex gap-2">
+                                <button 
+                                  className="text-secondary-yellow hover:text-white transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRequesterSelect(requester);
+                                    fetchLoanDetails();
+                                  }}
+                                  title="Get Loan Details"
+                                >
+                                  <FiSearch size={16} />
+                                </button>
+                                <button 
+                                  className="text-secondary-blue hover:text-white transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRequesterSelect(requester);
+                                    fetchLoanStatus();
+                                  }}
+                                  title="Get Loan Status"
+                                >
+                                  <FiDatabase size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white/5 rounded-lg border border-white/10 p-4 text-white/50 italic">
+                      {isLoadingRequesters ? "Loading requesters..." : "No loan requesters found. Click the button above to fetch them."}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  {/* Loan Status Section */}
+                  <div>
+                    <h4 className="text-lg font-bold mb-4">Loan Status</h4>
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      setSelectedRequester(requesterInput);
+                      fetchLoanStatus();
+                    }} className="mb-4">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={requesterInput}
+                          onChange={(e) => setRequesterInput(e.target.value)}
+                          placeholder="Enter borrower address (0x...)"
+                          className="flex-1 bg-white/10 border border-white/20 rounded-lg py-2 px-4 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-secondary-yellow"
+                        />
+                        <button
+                          type="submit"
+                          className="whistle-button-primary py-2 px-6 rounded-lg flex items-center gap-2"
+                          disabled={isLoadingStatus || !requesterInput}
+                        >
+                          {isLoadingStatus ? (
+                            <>
+                              <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                              <span>Loading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <FiDatabase size={16} />
+                              <span>Get Status</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                    
+                    {loanStatus ? (
+                      <div className="bg-white/5 rounded-lg border border-white/10 p-4">
+                        <h5 className="font-bold mb-3">Loan Status for {selectedRequester.substring(0, 6)}...{selectedRequester.substring(selectedRequester.length - 4)}</h5>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
+                            <span className="text-white/70">Amount:</span>
+                            <span className="font-bold text-secondary-yellow">₹{Number(loanStatus.amount).toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
+                            <span className="text-white/70">Repayment Amount:</span>
+                            <span className="font-bold">₹{Number(loanStatus.repaymentAmount).toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
+                            <span className="text-white/70">Status:</span>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              loanStatus.isRepaid 
+                                ? 'bg-green-500/20 text-green-400' 
+                                : 'bg-yellow-500/20 text-yellow-400'
+                            }`}>
+                              {loanStatus.isRepaid ? "Repaid" : "Active"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
+                            <span className="text-white/70">Interest Amount:</span>
+                            <span className="font-bold text-secondary-blue">₹{Number(loanStatus.repaymentAmount - loanStatus.amount).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-white/5 rounded-lg border border-white/10 p-4 text-white/50 italic">
+                        {isLoadingStatus ? "Loading loan status..." : "No loan status found. Select a requester or enter an address above."}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Loan Details Section */}
+                  <div>
+                    <h4 className="text-lg font-bold mb-4">Loan Details</h4>
+                    <form onSubmit={handleRequesterInputSubmit} className="mb-4">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={requesterInput}
+                          onChange={(e) => setRequesterInput(e.target.value)}
+                          placeholder="Enter borrower address (0x...)"
+                          className="flex-1 bg-white/10 border border-white/20 rounded-lg py-2 px-4 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-secondary-yellow"
+                        />
+                        <button
+                          type="submit"
+                          className="whistle-button-primary py-2 px-6 rounded-lg flex items-center gap-2"
+                          disabled={isLoadingDetails || !requesterInput}
+                        >
+                          {isLoadingDetails ? (
+                            <>
+                              <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                              <span>Loading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <FiSearch size={16} />
+                              <span>Get Details</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                    
+                    {loanDetails ? (
+                      <div className="bg-white/5 rounded-lg border border-white/10 p-4">
+                        <h5 className="font-bold mb-3">Loan Details for {selectedRequester.substring(0, 6)}...{selectedRequester.substring(selectedRequester.length - 4)}</h5>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
+                            <span className="text-white/70">Purpose:</span>
+                            <span className="font-bold">{loanDetails.description || "No description"}</span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
+                            <span className="text-white/70">Amount:</span>
+                            <span className="font-bold text-secondary-yellow">₹{Number(loanDetails.amount).toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
+                            <span className="text-white/70">Repayment Amount:</span>
+                            <span className="font-bold">₹{Number(loanDetails.repaymentAmount).toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
+                            <span className="text-white/70">Start Time:</span>
+                            <span className="font-bold">{new Date(Number(loanDetails.startTime) * 1000).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
+                            <span className="text-white/70">Status:</span>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              loanDetails.isRepaid 
+                                ? 'bg-green-500/20 text-green-400' 
+                                : 'bg-yellow-500/20 text-yellow-400'
+                            }`}>
+                              {loanDetails.isRepaid ? "Repaid" : "Active"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-white/5 rounded-lg border border-white/10 p-4 text-white/50 italic">
+                        {isLoadingDetails ? "Loading loan details..." : "No loan details found. Select a requester or enter an address above."}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </>
           )}
         </div>
       </motion.main>

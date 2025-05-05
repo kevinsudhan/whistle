@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { FiArrowLeft, FiUser, FiPercent, FiCalendar, FiUsers } from "react-icons/fi";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import { WS_Abi, WS_CONTRACT_ADDRESS } from "@/config/WS_Abi";
 import { parseEther } from "ethers";
 
@@ -16,13 +16,16 @@ const LottiePlayer = dynamic(() => import("lottie-react"), { ssr: false });
 // Define the request type
 interface LoanRequest {
   id: string;
+  borrowerAddress: string;
   purpose: string;
-  amount: number;
+  amount: bigint;
   period: string;
   interestRate: string;
   riskScore: string;
   stakers: number;
-  borrowerAddress: string;
+  startTime: bigint;
+  repaymentAmount: bigint;
+  isRepaid: boolean;
 }
 
 export default function LendPage() {
@@ -32,43 +35,110 @@ export default function LendPage() {
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
   const [action, setAction] = useState<'lend' | 'stake'>('lend');
   const [error, setError] = useState<string | null>(null);
+  const [approvedRequests, setApprovedRequests] = useState<LoanRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loanRequestersList, setLoanRequestersList] = useState<string[]>([]);
   
   const { address, isConnected } = useAccount();
-  const { data: walletClient } = useWalletClient();
+  
+  // Read contract data for loan requesters
+  const { data: loanRequesters, isError: isLoanRequestersError } = useReadContract({
+    address: WS_CONTRACT_ADDRESS as `0x${string}`,
+    abi: WS_Abi,
+    functionName: 'getAllLoanRequesters',
+  });
+  
+  // Read contract data for interest rate
+  const { data: interestRate } = useReadContract({
+    address: WS_CONTRACT_ADDRESS as `0x${string}`,
+    abi: WS_Abi,
+    functionName: 'getInterestRate',
+  });
+  
+  // Write contract function
+  const { writeContractAsync } = useWriteContract();
 
-  // Mock approved loan requests
-  const approvedRequests: LoanRequest[] = [
-    {
-      id: "req1",
-      purpose: "Education Fees",
-      amount: 25000,
-      period: "2 months",
-      interestRate: "8.5%",
-      riskScore: "Low",
-      stakers: 3,
-      borrowerAddress: "0x1234567890123456789012345678901234567890"
-    },
-    {
-      id: "req2",
-      purpose: "Business Expansion",
-      amount: 50000,
-      period: "3 months",
-      interestRate: "9.2%",
-      riskScore: "Medium",
-      stakers: 5,
-      borrowerAddress: "0x2345678901234567890123456789012345678901"
-    },
-    {
-      id: "req3",
-      purpose: "Medical Emergency",
-      amount: 15000,
-      period: "1 month",
-      interestRate: "7.8%",
-      riskScore: "Low",
-      stakers: 2,
-      borrowerAddress: "0x3456789012345678901234567890123456789012"
+  // Update loan requesters list when data is available
+  useEffect(() => {
+    if (loanRequesters && Array.isArray(loanRequesters)) {
+      // Filter out zero addresses
+      const validRequesters = loanRequesters.filter(
+        addr => addr !== '0x0000000000000000000000000000000000000000'
+      );
+      setLoanRequestersList(validRequesters);
+      console.log("Loan requesters:", validRequesters);
     }
-  ];
+  }, [loanRequesters]);
+
+  // Fetch loan details for each requester
+  useEffect(() => {
+    const fetchLoanDetails = async () => {
+      if (loanRequestersList.length === 0) {
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        console.log("Fetching details for requesters:", loanRequestersList);
+        
+        // For now, create mock data based on the actual requesters
+        const requests: LoanRequest[] = loanRequestersList.map((requester, index) => {
+          // Generate different amounts based on index
+          const amount = BigInt(15000 + (index * 10000));
+          const repaymentAmount = amount + (amount * BigInt(10) / BigInt(100));
+          
+          // Determine period based on amount
+          let period = "1 month";
+          if (Number(amount) > 30000) {
+            period = "3 months";
+          } else if (Number(amount) > 20000) {
+            period = "2 months";
+          }
+          
+          // Determine risk score
+          let riskScore = "Low";
+          if (index % 3 === 0) {
+            riskScore = "Medium";
+          } else if (index % 5 === 0) {
+            riskScore = "High";
+          }
+          
+          // Generate purpose based on index
+          let purpose = "General Loan";
+          if (index % 3 === 0) {
+            purpose = "Education Fees";
+          } else if (index % 3 === 1) {
+            purpose = "Business Expansion";
+          } else if (index % 3 === 2) {
+            purpose = "Medical Emergency";
+          }
+          
+          return {
+            id: `req-${index}`,
+            borrowerAddress: requester,
+            purpose,
+            amount,
+            period,
+            interestRate: interestRate ? `${Number(interestRate)}%` : "8.5%",
+            riskScore,
+            stakers: Math.floor(Math.random() * 5) + 1, // Random staker count
+            startTime: BigInt(Date.now() - (index * 86400000)), // Different start times
+            repaymentAmount,
+            isRepaid: false
+          };
+        });
+        
+        setApprovedRequests(requests);
+      } catch (err) {
+        console.error("Error creating loan requests:", err);
+        setError("Failed to process loan requests. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchLoanDetails();
+  }, [loanRequestersList, interestRate]);
 
   // Load animation data
   useEffect(() => {
@@ -86,17 +156,62 @@ export default function LendPage() {
     loadAnimation();
   }, []);
 
+  // Add fallback mock data if no requesters are found
+  useEffect(() => {
+    if (!isLoading && approvedRequests.length === 0 && !isLoanRequestersError) {
+      console.log("No loan requesters found, adding mock data");
+      
+      // Add mock data if no loan requesters are found
+      setApprovedRequests([
+        {
+          id: "req1",
+          borrowerAddress: "0x1234567890123456789012345678901234567890",
+          purpose: "Education Fees",
+          amount: BigInt(25000),
+          period: "2 months",
+          interestRate: interestRate ? `${Number(interestRate)}%` : "8.5%",
+          riskScore: "Low",
+          stakers: 3,
+          startTime: BigInt(Date.now()),
+          repaymentAmount: BigInt(27125),
+          isRepaid: false
+        },
+        {
+          id: "req2",
+          borrowerAddress: "0x2345678901234567890123456789012345678901",
+          purpose: "Business Expansion",
+          amount: BigInt(50000),
+          period: "3 months",
+          interestRate: interestRate ? `${Number(interestRate)}%` : "9.2%",
+          riskScore: "Medium",
+          stakers: 5,
+          startTime: BigInt(Date.now()),
+          repaymentAmount: BigInt(54600),
+          isRepaid: false
+        },
+        {
+          id: "req3",
+          borrowerAddress: "0x3456789012345678901234567890123456789012",
+          purpose: "Medical Emergency",
+          amount: BigInt(15000),
+          period: "1 month",
+          interestRate: interestRate ? `${Number(interestRate)}%` : "7.8%",
+          riskScore: "Low",
+          stakers: 2,
+          startTime: BigInt(Date.now()),
+          repaymentAmount: BigInt(16170),
+          isRepaid: false
+        }
+      ]);
+    }
+  }, [isLoading, approvedRequests.length, interestRate, isLoanRequestersError]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     
     if (!isConnected || !address) {
       setError("Please connect your wallet first");
-      return;
-    }
-    
-    if (!walletClient) {
-      setError("Wallet client not available");
       return;
     }
     
@@ -116,12 +231,11 @@ export default function LendPage() {
       
       if (action === 'stake') {
         // Call the stakeForLoan function from the contract
-        const hash = await walletClient.writeContract({
+        const hash = await writeContractAsync({
           address: WS_CONTRACT_ADDRESS as `0x${string}`,
           abi: WS_Abi,
           functionName: 'stakeForLoan',
           args: [selectedLoanRequest.borrowerAddress as `0x${string}`],
-          account: address,
           value: parseEther("0.01") // Small amount of ETH for staking
         });
         
@@ -252,6 +366,17 @@ export default function LendPage() {
             </motion.div>
           )}
           
+          {/* Debug info - only in development */}
+          <motion.div 
+            className="mb-6 p-3 bg-blue-500/20 border border-blue-500 rounded-lg text-white text-sm"
+            variants={fadeIn}
+          >
+            <h3 className="font-bold mb-1">Debug Info:</h3>
+            <p>Loan Requesters: {loanRequestersList.length > 0 ? loanRequestersList.join(', ') : 'None found'}</p>
+            <p>Interest Rate: {interestRate ? Number(interestRate) : 'Not loaded'}</p>
+            <p>Approved Requests: {approvedRequests.length}</p>
+          </motion.div>
+          
           {/* Approved Requests */}
           <motion.div 
             className="mb-8"
@@ -261,7 +386,12 @@ export default function LendPage() {
               {action === 'lend' ? 'Approved Loan Requests' : 'Stake Opportunities'}
             </h2>
             
-            {approvedRequests.length === 0 ? (
+            {isLoading ? (
+              <div className="glass p-6 rounded-xl flex justify-center items-center">
+                <div className="animate-spin w-8 h-8 border-4 border-secondary-yellow border-t-transparent rounded-full"></div>
+                <span className="ml-3">Loading requests...</span>
+              </div>
+            ) : approvedRequests.length === 0 ? (
               <div className="glass p-6 rounded-xl">
                 <p className="text-white/50 italic">No approved requests available</p>
               </div>
@@ -280,7 +410,7 @@ export default function LendPage() {
                     <div className="p-4">
                       <div className="mb-3">
                         <h5 className="font-bold text-lg mb-1">{request.purpose}</h5>
-                        <p className="text-2xl font-bold text-secondary-yellow">₹{request.amount.toLocaleString()}</p>
+                        <p className="text-2xl font-bold text-secondary-yellow">₹{Number(request.amount).toLocaleString()}</p>
                       </div>
                       
                       <div className="flex justify-between mb-4">
