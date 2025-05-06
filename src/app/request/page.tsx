@@ -8,6 +8,7 @@ import { FiArrowLeft, FiCalendar, FiInfo, FiLoader } from "react-icons/fi";
 import { useAccount, useWalletClient } from "wagmi";
 import { WS_Abi, WS_CONTRACT_ADDRESS } from "@/config/WS_Abi";
 import { parseEther } from "ethers";
+import { createMetaMaskCompatibleConfig } from "@/utils/transactionUtils";
 
 // Dynamic import of Lottie component
 const LottiePlayer = dynamic(() => import("lottie-react"), { ssr: false });
@@ -115,9 +116,8 @@ export default function RequestForm() {
         functionName: 'requestLoan',
         args: [amountInWei, purpose],
         account: address,
-        // Add EIP-1559 gas parameters
-        gas: BigInt(300000), // Gas limit
-        type: 'eip1559' // Explicitly specify EIP-1559 transaction type
+        // Use the MetaMask compatible configuration
+        ...createMetaMaskCompatibleConfig()
       });
       
       console.log("Transaction hash:", hash);

@@ -9,6 +9,7 @@ import { FiArrowLeft, FiUser, FiPercent, FiCalendar, FiUsers, FiCheck, FiLoader 
 import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import { WS_Abi, WS_CONTRACT_ADDRESS } from "@/config/WS_Abi";
 import { parseEther } from "ethers";
+import { createMetaMaskCompatibleConfig } from "@/utils/transactionUtils";
 
 // Dynamic import of Lottie component
 const LottiePlayer = dynamic(() => import("lottie-react"), { ssr: false });
@@ -241,8 +242,8 @@ export default function LendPage() {
           functionName: 'stakeForLoan',
           args: [selectedLoanRequest.borrowerAddress as `0x${string}`],
           value: parseEther("0.01"), // Small amount of ETH for staking
-          gas: BigInt(300000), // Gas limit
-          type: 'eip1559' // Explicitly specify EIP-1559 transaction type
+          // Use the MetaMask compatible configuration
+          ...createMetaMaskCompatibleConfig()
         });
         
         console.log("Stake transaction hash:", hash);
