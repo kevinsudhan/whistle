@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { FiArrowLeft, FiCalendar, FiInfo } from "react-icons/fi";
+import { FiArrowLeft, FiCalendar, FiInfo, FiLoader } from "react-icons/fi";
 import { useAccount, useWalletClient } from "wagmi";
 import { WS_Abi, WS_CONTRACT_ADDRESS } from "@/config/WS_Abi";
 import { parseEther } from "ethers";
@@ -18,6 +18,8 @@ export default function RequestForm() {
   const [amount, setAmount] = useState("");
   const [loanPeriod, setLoanPeriod] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTransactionComplete, setIsTransactionComplete] = useState(false);
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
   const [animationData, setAnimationData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   
@@ -79,6 +81,8 @@ export default function RequestForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setTransactionHash(null);
+    setIsTransactionComplete(false);
     
     if (!isConnected || !address) {
       setError("Please connect your wallet first");
@@ -114,11 +118,13 @@ export default function RequestForm() {
       });
       
       console.log("Transaction hash:", hash);
+      setTransactionHash(hash);
+      setIsTransactionComplete(true);
       
       // Navigate after animation completes
       setTimeout(() => {
         router.push('/community/svce');
-      }, 3000);
+      }, 5000);
       
     } catch (err) {
       console.error("Error submitting loan request:", err);
@@ -300,17 +306,37 @@ export default function RequestForm() {
       {isSubmitting && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-80">
           <div className="w-64 h-64 mb-6">
-            {animationData && (
-              <LottiePlayer 
-                animationData={animationData} 
-                loop={true}
-                style={{ width: '100%', height: '100%' }}
-              />
+            {isTransactionComplete ? (
+              animationData && (
+                <LottiePlayer 
+                  animationData={animationData} 
+                  loop={false}
+                  style={{ width: '100%', height: '100%' }}
+                />
+              )
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin text-secondary-yellow">
+                  <FiLoader size={64} />
+                </div>
+              </div>
             )}
           </div>
-          <p className="text-xl font-medium text-white text-center">
-            Your request has been submitted for approval
+          <p className="text-xl font-medium text-white text-center mb-4">
+            {!isTransactionComplete 
+              ? "Processing your loan request..."
+              : "Your request has been submitted for approval!"
+            }
           </p>
+          
+          {isTransactionComplete && transactionHash && (
+            <div className="bg-white/10 rounded-lg p-3 max-w-md">
+              <p className="text-sm text-white/70 mb-1">Transaction Hash:</p>
+              <p className="text-xs font-mono text-secondary-yellow break-all">
+                {transactionHash}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

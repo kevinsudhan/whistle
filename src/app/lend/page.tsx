@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { FiArrowLeft, FiUser, FiPercent, FiCalendar, FiUsers } from "react-icons/fi";
+import { FiArrowLeft, FiUser, FiPercent, FiCalendar, FiUsers, FiCheck, FiLoader } from "react-icons/fi";
 import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import { WS_Abi, WS_CONTRACT_ADDRESS } from "@/config/WS_Abi";
 import { parseEther } from "ethers";
@@ -31,6 +31,8 @@ interface LoanRequest {
 export default function LendPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTransactionComplete, setIsTransactionComplete] = useState(false);
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
   const [animationData, setAnimationData] = useState<any>(null);
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
   const [action, setAction] = useState<'lend' | 'stake'>('lend');
@@ -209,6 +211,8 @@ export default function LendPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setTransactionHash(null);
+    setIsTransactionComplete(false);
     
     if (!isConnected || !address) {
       setError("Please connect your wallet first");
@@ -240,17 +244,20 @@ export default function LendPage() {
         });
         
         console.log("Stake transaction hash:", hash);
+        setTransactionHash(hash);
+        setIsTransactionComplete(true);
       } else {
         // For lending, we would implement the lending logic here
         // This is a placeholder for now
         console.log("Lending for:", selectedLoanRequest.purpose);
         await new Promise(resolve => setTimeout(resolve, 1000));
+        setIsTransactionComplete(true);
       }
       
       // Navigate after animation completes
       setTimeout(() => {
         router.push('/community/svce');
-      }, 3000);
+      }, 5000);
     } catch (err) {
       console.error("Error during transaction:", err);
       setError(err instanceof Error ? err.message : "Transaction failed. Please try again.");
@@ -494,20 +501,39 @@ export default function LendPage() {
       {isSubmitting && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-80">
           <div className="w-64 h-64 mb-6">
-            {animationData && (
-              <LottiePlayer 
-                animationData={animationData} 
-                loop={true}
-                style={{ width: '100%', height: '100%' }}
-              />
+            {isTransactionComplete ? (
+              animationData && (
+                <LottiePlayer 
+                  animationData={animationData} 
+                  loop={false}
+                  style={{ width: '100%', height: '100%' }}
+                />
+              )
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin text-secondary-yellow">
+                  <FiLoader size={64} />
+                </div>
+              </div>
             )}
           </div>
-          <p className="text-xl font-medium text-white text-center">
-            {action === 'lend' 
-              ? "Your lending has been confirmed"
-              : "Your staking has been confirmed"
+          <p className="text-xl font-medium text-white text-center mb-4">
+            {!isTransactionComplete 
+              ? `Processing your ${action}...`
+              : action === 'lend' 
+                ? "Your lending has been confirmed!"
+                : "Your staking has been confirmed!"
             }
           </p>
+          
+          {isTransactionComplete && transactionHash && (
+            <div className="bg-white/10 rounded-lg p-3 max-w-md">
+              <p className="text-sm text-white/70 mb-1">Transaction Hash:</p>
+              <p className="text-xs font-mono text-secondary-yellow break-all">
+                {transactionHash}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

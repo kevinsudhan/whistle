@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import CountUp from "@/components/CountUp";
 import { FiAward, FiCheck, FiX, FiLock, FiDatabase, FiSearch } from "react-icons/fi";
+import AdVideo from "@/components/AdVideo";
 
 // Dynamic imports for charts
 const PieChart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -79,6 +80,7 @@ export default function CommunityDashboard() {
   const [isLoadingRate, setIsLoadingRate] = useState(false);
   const [requesterInput, setRequesterInput] = useState("");
   const [onChainError, setOnChainError] = useState("");
+  const [showAd, setShowAd] = useState(false);
   
   const { address, isConnected } = useAccount();
   
@@ -290,6 +292,20 @@ export default function CommunityDashboard() {
     fetchLoanDetails();
   };
 
+  // Check if this is the first visit to show the ad
+  useEffect(() => {
+    const hasSeenAd = localStorage.getItem('hasSeenAd');
+    if (!hasSeenAd) {
+      setShowAd(true);
+      // Mark that the user has seen the ad
+      localStorage.setItem('hasSeenAd', 'true');
+    }
+  }, []);
+
+  const handleCloseAd = () => {
+    setShowAd(false);
+  };
+
   // Pie chart options
   const pieChartOptions = {
     labels: ['Closed', 'In Progress'],
@@ -424,6 +440,9 @@ export default function CommunityDashboard() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* Advertisement Video */}
+      {showAd && <AdVideo onClose={handleCloseAd} />}
+      
       {/* Background */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         {/* Grid background with less visible lines */}
@@ -957,11 +976,11 @@ export default function CommunityDashboard() {
                         <div className="space-y-3">
                           <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
                             <span className="text-white/70">Amount:</span>
-                            <span className="font-bold text-secondary-yellow">₹{Number(loanStatus.amount).toLocaleString()}</span>
+                            <span className="font-bold text-secondary-yellow">{loanStatus.amount.toString()} WEI</span>
                           </div>
                           <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
                             <span className="text-white/70">Repayment Amount:</span>
-                            <span className="font-bold">₹{Number(loanStatus.repaymentAmount).toLocaleString()}</span>
+                            <span className="font-bold">{loanStatus.repaymentAmount.toString()} WEI</span>
                           </div>
                           <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
                             <span className="text-white/70">Status:</span>
@@ -975,7 +994,7 @@ export default function CommunityDashboard() {
                           </div>
                           <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
                             <span className="text-white/70">Interest Amount:</span>
-                            <span className="font-bold text-secondary-blue">₹{Number(loanStatus.repaymentAmount - loanStatus.amount).toLocaleString()}</span>
+                            <span className="font-bold text-secondary-blue">{(loanStatus.repaymentAmount - loanStatus.amount).toString()} WEI</span>
                           </div>
                         </div>
                       </div>
@@ -1028,11 +1047,11 @@ export default function CommunityDashboard() {
                           </div>
                           <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
                             <span className="text-white/70">Amount:</span>
-                            <span className="font-bold text-secondary-yellow">₹{Number(loanDetails.amount).toLocaleString()}</span>
+                            <span className="font-bold text-secondary-yellow">{loanDetails.amount.toString()} WEI</span>
                           </div>
                           <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
                             <span className="text-white/70">Repayment Amount:</span>
-                            <span className="font-bold">₹{Number(loanDetails.repaymentAmount).toLocaleString()}</span>
+                            <span className="font-bold">{loanDetails.repaymentAmount.toString()} WEI</span>
                           </div>
                           <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
                             <span className="text-white/70">Start Time:</span>

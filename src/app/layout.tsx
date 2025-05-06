@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
+import dynamic from "next/dynamic";
 import { WagmiProviderWrapper } from "@/providers/wagmi-provider";
+
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,7 +41,9 @@ export default function RootLayout({
       </head>
       <body>
         <WagmiProviderWrapper>
-          {children}
+          
+            {children}
+        
         </WagmiProviderWrapper>
         <Script src="/register-sw.js" strategy="afterInteractive" />
       </body>
