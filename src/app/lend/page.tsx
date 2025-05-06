@@ -240,7 +240,9 @@ export default function LendPage() {
           abi: WS_Abi,
           functionName: 'stakeForLoan',
           args: [selectedLoanRequest.borrowerAddress as `0x${string}`],
-          value: parseEther("0.01") // Small amount of ETH for staking
+          value: parseEther("0.01"), // Small amount of ETH for staking
+          gas: BigInt(300000), // Gas limit
+          type: 'eip1559' // Explicitly specify EIP-1559 transaction type
         });
         
         console.log("Stake transaction hash:", hash);
