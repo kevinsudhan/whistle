@@ -326,7 +326,7 @@ export default function LendPage() {
             <div className="flex items-center bg-white/10 rounded-full px-4 py-1">
               <Image 
                 src="/images/token-icon.svg" 
-                alt="SVCE Token" 
+                alt="UC Berkeley Token" 
                 width={24} 
                 height={24} 
               />
@@ -420,14 +420,14 @@ export default function LendPage() {
                     <div className="p-4">
                       <div className="mb-3">
                         <h5 className="font-bold text-lg mb-1">{request.purpose}</h5>
-                        <p className="text-2xl font-bold text-secondary-yellow">₹{Number(request.amount).toLocaleString()}</p>
+                        <p className="text-2xl font-bold text-secondary-yellow">${Number(request.amount).toLocaleString()}</p>
                       </div>
                       
                       <div className="flex justify-between mb-4">
                         <div className="flex items-center gap-1">
                           <Image 
                             src="/images/token-icon.svg" 
-                            alt="SVCE Token" 
+                            alt="UC Berkeley Token" 
                             width={16} 
                             height={16} 
                           />

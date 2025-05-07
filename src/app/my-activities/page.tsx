@@ -110,7 +110,7 @@ export default function MyActivities() {
           colors: '#ffffff'
         },
         formatter: function(value: number) {
-          return '₹' + value;
+          return '$' + value;
         }
       }
     },
@@ -254,7 +254,7 @@ export default function MyActivities() {
             <div className="flex items-center bg-white/10 rounded-full px-4 py-1">
               <Image 
                 src="/images/token-icon.svg" 
-                alt="SVCE Token" 
+                alt="UC Berkeley Token" 
                 width={24} 
                 height={24} 
               />
@@ -283,21 +283,21 @@ export default function MyActivities() {
             <div className="glass p-6 rounded-xl">
               <h3 className="text-lg font-medium text-white/70 mb-2">Total Lent</h3>
               <p className="text-3xl font-bold">
-                <CountUp end={35000} prefix="₹" duration={2.5} />
+                <CountUp end={35000} prefix="$" duration={2.5} />
               </p>
             </div>
             
             <div className="glass p-6 rounded-xl">
               <h3 className="text-lg font-medium text-white/70 mb-2">Total Borrowed</h3>
               <p className="text-3xl font-bold">
-                <CountUp end={45000} prefix="₹" duration={2.5} />
+                <CountUp end={45000} prefix="$" duration={2.5} />
               </p>
             </div>
             
             <div className="glass p-6 rounded-xl">
               <h3 className="text-lg font-medium text-white/70 mb-2">Interest Earned</h3>
               <p className="text-3xl font-bold">
-                <CountUp end={9200} prefix="₹" duration={2.5} />
+                <CountUp end={9200} prefix="$" duration={2.5} />
               </p>
             </div>
           </motion.div>
@@ -394,7 +394,7 @@ export default function MyActivities() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">₹{activity.amount.toLocaleString()}</p>
+                      <p className="font-bold">${activity.amount.toLocaleString()}</p>
                       <div className="flex items-center gap-1 text-sm">
                         {activity.status === 'active' ? (
                           <>
@@ -428,7 +428,7 @@ export default function MyActivities() {
                         <span>Due: {activity.dueDate}</span>
                         <span>
                           {activity.type === 'lend' ? 'Receiving' : 'Paying'}: 
-                          ₹{Math.round(activity.amount * 0.085).toLocaleString()} interest
+                          ${Math.round(activity.amount * 0.085).toLocaleString()} interest
                         </span>
                       </div>
                     </div>

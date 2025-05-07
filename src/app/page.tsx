@@ -183,7 +183,7 @@ export default function Home() {
   const stats = [
     { title: "Communities", value: 150, suffix: "+" },
     { title: "Users", value: 25000, suffix: "+" },
-    { title: "Loans Funded", value: 75, prefix: "₹", suffix: " Cr" },
+    { title: "Loans Funded", value: 75, prefix: "$", suffix: "M" },
     { title: "Success Rate", value: 98, suffix: "%" }
   ];
   
@@ -354,7 +354,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            Decentralized microfinance for communities, powered by trust and blockchain technology
+            Decentralized microfinance for communities on Westend Asset Hub (Polkadot), powered by trust and blockchain technology
           </motion.p>
 
           <motion.div

@@ -222,7 +222,7 @@ export default function GetStarted() {
                         : "Connect MetaMask Wallet"}
                 </button>
                 <p className="text-xs text-white/50 text-center">
-                  Will connect to SEI Atlantic-2 Testnet (Chain ID: 1328)
+                  Will connect to Westend Asset Hub (Polkadot)
                 </p>
               </div>
             </div>

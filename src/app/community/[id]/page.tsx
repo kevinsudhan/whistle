@@ -119,7 +119,7 @@ export default function CommunityDashboard() {
     loansLended: 156,
     closed: 120,
     inProgress: 36,
-    totalAmount: "₹15,75,000",
+    totalAmount: "$1,575,000",
     successfulStakes: 142,
     unsuccessfulStakes: 14,
     totalStakers: 156
@@ -383,7 +383,7 @@ export default function CommunityDashboard() {
           colors: '#ffffff'
         },
         formatter: function(value: number) {
-          return '₹' + (value / 1000) + 'K';
+          return '$' + (value / 1000) + 'K';
         }
       }
     },
@@ -477,7 +477,7 @@ export default function CommunityDashboard() {
             <div className="flex items-center bg-white/10 rounded-full px-4 py-1">
               <Image 
                 src="/images/token-icon.svg" 
-                alt="SVCE Token" 
+                alt="UC Berkeley Token" 
                 width={24} 
                 height={24} 
               />
@@ -507,14 +507,14 @@ export default function CommunityDashboard() {
               <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
                 <Image 
                   src="/images/token-icon.svg" 
-                  alt="SVCE" 
+                  alt="UC Berkeley" 
                   width={32} 
                   height={32} 
                 />
               </div>
               <div>
-                <h2 className="text-2xl font-bold">SVCE Community</h2>
-                <p className="text-white/70">Sri Venkateswara College of Engineering</p>
+                <h2 className="text-2xl font-bold">UC Berkeley Community</h2>
+                <p className="text-white/70">University of California, Berkeley</p>
               </div>
             </div>
             
@@ -570,7 +570,7 @@ export default function CommunityDashboard() {
                 <div className="glass p-6 rounded-xl">
                   <h3 className="text-lg font-medium text-white/70 mb-2">Total Amount</h3>
                   <p className="text-3xl font-bold">
-                    <CountUp end={parseInt(loanStats.totalAmount.replace(/[^\d]/g, ""))} prefix="₹" duration={2.5} />
+                    <CountUp end={parseInt(loanStats.totalAmount.replace(/[^\d]/g, ""))} prefix="$" duration={2.5} />
                   </p>
                 </div>
                 
@@ -705,14 +705,14 @@ export default function CommunityDashboard() {
                         <div className="p-4">
                           <div className="mb-3">
                             <h5 className="font-bold text-lg mb-1">{request.purpose}</h5>
-                            <p className="text-2xl font-bold text-secondary-yellow">₹{request.amount.toLocaleString()}</p>
+                            <p className="text-2xl font-bold text-secondary-yellow">${request.amount.toLocaleString()}</p>
                           </div>
                           
                           <div className="flex justify-between mb-4">
                             <div className="flex items-center gap-1">
                               <Image 
                                 src="/images/token-icon.svg" 
-                                alt="SVCE Token" 
+                                alt="UC Berkeley Token" 
                                 width={16} 
                                 height={16} 
                               />
@@ -768,7 +768,7 @@ export default function CommunityDashboard() {
                           <div className="flex justify-between items-start mb-3">
                             <div>
                               <h5 className="font-bold text-lg mb-1">{request.purpose}</h5>
-                              <p className="text-2xl font-bold text-secondary-yellow">₹{request.amount.toLocaleString()}</p>
+                              <p className="text-2xl font-bold text-secondary-yellow">${request.amount.toLocaleString()}</p>
                             </div>
                             <span className="px-3 py-1 rounded-full text-xs bg-green-500/20 text-green-400">
                               Approved
@@ -779,7 +779,7 @@ export default function CommunityDashboard() {
                             <div className="flex items-center gap-1">
                               <Image 
                                 src="/images/token-icon.svg" 
-                                alt="SVCE Token" 
+                                alt="UC Berkeley Token" 
                                 width={16} 
                                 height={16} 
                               />

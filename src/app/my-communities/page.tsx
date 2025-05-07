@@ -12,9 +12,9 @@ export default function MyCommunities() {
   // Mock data for communities
   const myCommunities = [
     {
-      id: "svce",
-      name: "SVCE",
-      fullName: "Sri Venkateswara College of Engineering",
+      id: "berkeley",
+      name: "UC Berkeley",
+      fullName: "University of California, Berkeley",
       members: 1250,
       image: "/images/token-icon.svg"
     }
@@ -22,23 +22,23 @@ export default function MyCommunities() {
 
   const exploreCommunities = [
     {
-      id: "iitm",
-      name: "IIT Madras",
-      fullName: "Indian Institute of Technology, Madras",
+      id: "stanford",
+      name: "Stanford",
+      fullName: "Stanford University",
       members: 3500,
       image: "/images/token-icon.svg"
     },
     {
-      id: "anna-univ",
-      name: "Anna University",
-      fullName: "Anna University, Chennai",
+      id: "harvard",
+      name: "Harvard",
+      fullName: "Harvard University",
       members: 2800,
       image: "/images/token-icon.svg"
     },
     {
-      id: "srmist",
-      name: "SRM IST",
-      fullName: "SRM Institute of Science and Technology",
+      id: "mit",
+      name: "MIT",
+      fullName: "Massachusetts Institute of Technology",
       members: 2200,
       image: "/images/token-icon.svg"
     }

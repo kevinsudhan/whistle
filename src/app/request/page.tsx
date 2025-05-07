@@ -239,13 +239,13 @@ export default function RequestForm() {
             <div className="mb-6">
               <label className="block text-white/70 mb-2">How much money do you require?</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50">₹</span>
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50">$</span>
                 <input 
                   type="number" 
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="w-full bg-white/10 border border-white/20 rounded-lg py-3 pl-10 pr-4 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-secondary-yellow"
-                  placeholder="Enter amount in ₹"
+                  placeholder="Enter amount in $"
                   min="0"
                   required
                 />
@@ -280,7 +280,7 @@ export default function RequestForm() {
               {/* Monthly payment information */}
               {monthlyPayment && (
                 <div className="mt-2 text-secondary-yellow">
-                  <p>Monthly payment: ₹{monthlyPayment.toLocaleString()}</p>
+                  <p>Monthly payment: ${monthlyPayment.toLocaleString()}</p>
                 </div>
               )}
             </div>
