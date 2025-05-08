@@ -31,10 +31,7 @@ export { sepolia, polygonMumbai, polygon, };
 
 // Define the chains we want to support
 export const supportedChains = [
-  WestendAsset, // SEI Atlantic-2 testnet
-  sepolia,      // Ethereum testnet
-  polygonMumbai, // Polygon testnet
-  polygon       // Polygon mainnet
+  WestendAsset // Only Westend Asset Hub (Polkadot)
 ] as const satisfies readonly [Chain, ...Chain[]];
 
 // Default chain for development

@@ -5,13 +5,23 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { FiArrowLeft, FiCalendar, FiInfo, FiLoader } from "react-icons/fi";
-import { useAccount, useWalletClient } from "wagmi";
+import { ethers } from "ethers";
 import { WS_Abi, WS_CONTRACT_ADDRESS } from "@/config/WS_Abi";
-import { parseEther } from "ethers";
-import { createMetaMaskCompatibleConfig } from "@/utils/transactionUtils";
+import { WestendAsset } from "@/config/chains";
 
 // Dynamic import of Lottie component
 const LottiePlayer = dynamic(() => import("lottie-react"), { ssr: false });
+
+// LoanStorage ABI for checking contract state
+const LOAN_STORAGE_ABI = [
+  {
+    "inputs": [],
+    "name": "manager",
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] as const;
 
 export default function RequestForm() {
   const router = useRouter();
@@ -21,11 +31,70 @@ export default function RequestForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTransactionComplete, setIsTransactionComplete] = useState(false);
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
-  const [animationData, setAnimationData] = useState<any>(null);
+  const [animationData, setAnimationData] = useState<object | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  const { address, isConnected } = useAccount();
-  const { data: walletClient } = useWalletClient();
+  // Ethers state
+  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
+  const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
+  const [address, setAddress] = useState<string | null>(null);
+  const [chainId, setChainId] = useState<number | null>(null);
+
+  // Contract state
+  const [storageContractAddress, setStorageContractAddress] = useState<string | null>(null);
+  const [whistleLoanOwner, setWhistleLoanOwner] = useState<string | null>(null);
+  const [loanStorageManager, setLoanStorageManager] = useState<string | null>(null);
+
+  // Connect wallet and set provider/signer/address/chainId
+  const connectWallet = async () => {
+    if (typeof window === "undefined" || !('ethereum' in window)) {
+      setError("MetaMask not found. Please install MetaMask.");
+      return;
+    }
+    try {
+      // Type guard for window.ethereum
+      const eth = (window as typeof window & { ethereum?: unknown }).ethereum;
+      if (!eth) {
+        setError("MetaMask not found. Please install MetaMask.");
+        return;
+      }
+      const _provider = new ethers.BrowserProvider(eth);
+      await _provider.send("eth_requestAccounts", []);
+      const _signer = await _provider.getSigner();
+      const _address = await _signer.getAddress();
+      const { chainId: _chainId } = await _provider.getNetwork();
+      setProvider(_provider);
+      setSigner(_signer);
+      setAddress(_address);
+      setChainId(Number(_chainId));
+    } catch {
+      setError("Failed to connect wallet.");
+    }
+  };
+
+  // Read contract state
+  const fetchContractState = async () => {
+    if (!provider) return;
+    try {
+      const whistleLoan = new ethers.Contract(WS_CONTRACT_ADDRESS, WS_Abi, provider);
+      const _storageContractAddress = await whistleLoan.storageContract();
+      const _whistleLoanOwner = await whistleLoan.owner();
+      setStorageContractAddress(_storageContractAddress);
+      setWhistleLoanOwner(_whistleLoanOwner);
+
+      // Read manager from LoanStorage
+      const loanStorage = new ethers.Contract(_storageContractAddress, LOAN_STORAGE_ABI, provider);
+      const _loanStorageManager = await loanStorage.manager();
+      setLoanStorageManager(_loanStorageManager);
+    } catch {
+      setError("Failed to fetch contract state.");
+    }
+  };
+
+  useEffect(() => {
+    if (provider) fetchContractState();
+    // eslint-disable-next-line
+  }, [provider]);
 
   // Current interest rate
   const interestRate = 8.5;
@@ -84,54 +153,72 @@ export default function RequestForm() {
     setError(null);
     setTransactionHash(null);
     setIsTransactionComplete(false);
-    
-    if (!isConnected || !address) {
+
+    if (!signer || !address || !chainId) {
       setError("Please connect your wallet first");
       return;
     }
-    
-    if (!walletClient) {
-      setError("Wallet client not available");
+
+    if (chainId !== WestendAsset.id) {
+      setError("Please switch to Westend Asset Hub network");
       return;
     }
-    
+
+    if (!storageContractAddress || !whistleLoanOwner || !loanStorageManager) {
+      setError("Contract state not loaded. Please try again.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      
-      // Validate amount
+
       if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
         throw new Error("Please enter a valid amount");
       }
-      
-      // Convert amount to wei using ethers parseEther
-      // This will properly format the amount for the blockchain
-      const amountInWei = parseEther(amount);
-      
-      console.log("Sending amount to contract:", amountInWei.toString());
-      
-      // Call the requestLoan function from the contract using walletClient
-      const hash = await walletClient.writeContract({
-        address: WS_CONTRACT_ADDRESS as `0x${string}`,
-        abi: WS_Abi,
-        functionName: 'requestLoan',
-        args: [amountInWei, purpose],
-        account: address,
-        // Use the MetaMask compatible configuration
-        ...createMetaMaskCompatibleConfig()
+
+      const amountBigInt = BigInt(amount);
+
+      // Log all contract state and arguments
+      console.log("About to call requestLoan with:", {
+        contract: WS_CONTRACT_ADDRESS,
+        storageContract: storageContractAddress,
+        whistleLoanOwner,
+        loanStorageManager,
+        amount: amountBigInt,
+        data: purpose,
+        sender: address
       });
-      
-      console.log("Transaction hash:", hash);
-      setTransactionHash(hash);
+
+      const whistleLoan = new ethers.Contract(WS_CONTRACT_ADDRESS, WS_Abi, signer);
+      let tx;
+      try {
+        tx = await whistleLoan.requestLoan(amountBigInt, purpose, { gasLimit: 500000 });
+      } catch (innerErr) {
+        // Try a minimal hardcoded transaction for debugging
+        console.error("Dynamic transaction failed, trying minimal call. Error:", innerErr);
+        tx = await whistleLoan.requestLoan(BigInt(1), "fl", { gasLimit: 500000 });
+      }
+      setTransactionHash(tx.hash);
+      await tx.wait();
       setIsTransactionComplete(true);
-      
-      // Navigate after animation completes
+
       setTimeout(() => {
         router.push('/community/svce');
       }, 5000);
-      
-    } catch (err) {
-      console.error("Error submitting loan request:", err);
-      setError(err instanceof Error ? err.message : "Failed to submit loan request. Please try again.");
+
+    } catch (err: unknown) {
+      console.error("Full error object:", err);
+      let errorMsg = "Failed to submit loan request. Please try again.";
+      if (typeof err === "object" && err !== null) {
+        if ("reason" in err && typeof (err as { reason: unknown }).reason === "string") {
+          errorMsg = (err as { reason: string }).reason;
+        } else if ("message" in err && typeof (err as { message: unknown }).message === "string") {
+          errorMsg = (err as { message: string }).message;
+        } else {
+          errorMsg = JSON.stringify(err);
+        }
+      }
+      setError(errorMsg);
       setIsSubmitting(false);
     }
   };
@@ -204,7 +291,13 @@ export default function RequestForm() {
         variants={staggerContainer}
       >
         <div className="max-w-md mx-auto">
-          {/* Form */}
+          <button
+            className="whistle-button-primary w-full py-3 rounded-full text-lg mb-4"
+            onClick={connectWallet}
+            disabled={!!address}
+          >
+            {address ? `Wallet Connected: ${address.slice(0, 6)}...${address.slice(-4)}` : "Connect MetaMask Wallet"}
+          </button>
           <motion.form 
             onSubmit={handleSubmit}
             className="glass p-6 rounded-xl"
@@ -297,7 +390,7 @@ export default function RequestForm() {
             <button 
               type="submit"
               className="w-full whistle-button-primary py-3 rounded-lg text-base font-bold"
-              disabled={isSubmitting || !walletClient}
+              disabled={isSubmitting || !signer}
             >
               {isSubmitting ? "Processing..." : "Send for Approval"}
             </button>

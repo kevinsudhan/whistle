@@ -73,7 +73,7 @@ export const WS_Abi = [
 		"stateMutability": "view",
 		"type": "function"
 	}
-] as const
+] as const;
 
 // Contract address from the comment in the Solidity file
-export const WS_CONTRACT_ADDRESS = "0x62f5477Da2559EcA1Bc2412da40a3f6Bc40062d9";
+export const WS_CONTRACT_ADDRESS = "0x73322c3cF890dfcA40200bFA282bE9DA6FB3580d";
