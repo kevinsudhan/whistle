@@ -4,6 +4,11 @@
   <img src="/public/images/whistle-logo.svg" alt="Whistle Finance Logo" width="200" />
 </p>
 
+## Deployed Smart Contracts
+
+- **Loan Storage Contract**: [0x96dfc97779d32f09988D6490159B4EcF4b31aBeE](https://assethub-westend.subscan.io/account/0x96dfc97779d32f09988d6490159b4ecf4b31abee)
+- **Whistle Loan Contract**: [0x62f5477Da2559EcA1Bc2412da40a3f6Bc40062d9](https://assethub-westend.subscan.io/account/0x62f5477da2559eca1bc2412da40a3f6bc40062d9)
+
 ## Decentralized Microfinance Platform on Westend Asset Hub (Polkadot)
 
 Whistle Finance is a decentralized microfinance platform that enables communities to create self-sustaining lending ecosystems powered by trust and blockchain technology. Built on the Westend Asset Hub (Polkadot), it provides a secure and transparent way for community members to request loans, stake funds, and participate in community governance.
