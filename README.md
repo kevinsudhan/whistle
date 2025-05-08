@@ -16,7 +16,6 @@ Whistle Finance is a decentralized microfinance platform that enables communitie
 ## 🌟 Features
 
 - **Community-Based Lending**: Join existing communities or create your own lending ecosystem
-- **Decentralized Identity**: Secure wallet connection with Dynamic SDK integration
 - **Loan Requests**: Submit loan requests with purpose, amount, and repayment terms
 - **Staking Mechanism**: Stake funds to support loan requests from trusted community members
 - **On-Chain Activities**: View and track all blockchain transactions within your community
