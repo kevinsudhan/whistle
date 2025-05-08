@@ -32,8 +32,7 @@ interface LoanDetails {
   description: string;
 }
 
-import { useAccount, useReadContract, useWriteContract } from "wagmi";
-import { WS_Abi, WS_CONTRACT_ADDRESS } from "@/config/WS_Abi";
+// Blockchain imports removed
 
 export default function CommunityDashboard() {
   const router = useRouter();
@@ -74,6 +73,7 @@ export default function CommunityDashboard() {
   const [loanDetails, setLoanDetails] = useState<LoanDetails | null>(null);
   const [loanStatus, setLoanStatus] = useState<{amount: bigint, repaymentAmount: bigint, isRepaid: boolean} | null>(null);
   const [interestRate, setInterestRate] = useState<bigint | null>(null);
+  // Mock blockchain-related state variables
   const [isLoadingRequesters, setIsLoadingRequesters] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
@@ -82,37 +82,9 @@ export default function CommunityDashboard() {
   const [onChainError, setOnChainError] = useState("");
   const [showAd, setShowAd] = useState(false);
   
-  const { address, isConnected } = useAccount();
-  
-  // Read contract data for loan requesters
-  const { data: contractLoanRequesters, refetch: refetchLoanRequesters } = useReadContract({
-    address: WS_CONTRACT_ADDRESS as `0x${string}`,
-    abi: WS_Abi,
-    functionName: 'getAllLoanRequesters',
-  });
-  
-  // Read contract data for loan details
-  const { data: contractLoanDetails, refetch: refetchLoanDetails } = useReadContract({
-    address: WS_CONTRACT_ADDRESS as `0x${string}`,
-    abi: WS_Abi,
-    functionName: 'getLoanDetails',
-    args: selectedRequester ? [selectedRequester as `0x${string}`] : undefined,
-  });
-  
-  // Read contract data for loan status
-  const { data: contractLoanStatus, refetch: refetchLoanStatus } = useReadContract({
-    address: WS_CONTRACT_ADDRESS as `0x${string}`,
-    abi: WS_Abi,
-    functionName: 'getLoanStatus',
-    args: selectedRequester ? [selectedRequester as `0x${string}`] : undefined,
-  });
-  
-  // Read contract data for interest rate
-  const { data: contractInterestRate, refetch: refetchInterestRate } = useReadContract({
-    address: WS_CONTRACT_ADDRESS as `0x${string}`,
-    abi: WS_Abi,
-    functionName: 'getInterestRate',
-  });
+  // Mock data for blockchain connection status
+  const isConnected = true;
+  const address = "0x1234...5678";
 
   // Mock data for charts and stats
   const loanStats = {
@@ -173,33 +145,33 @@ export default function CommunityDashboard() {
     setPendingRequests(pendingRequests.filter(req => req.id !== requestId));
   };
 
-  // Function to fetch loan requesters
+  // Mock function to fetch loan requesters with static data
   const fetchLoanRequesters = async () => {
     setIsLoadingRequesters(true);
     setOnChainError("");
     
-    try {
-      const result = await refetchLoanRequesters();
-      if (result.data) {
-        // Filter out zero addresses
-        const validRequesters = (result.data as string[]).filter(
-          addr => addr !== '0x0000000000000000000000000000000000000000'
-        );
-        setLoanRequesters(validRequesters);
-      } else {
-        setOnChainError("Failed to fetch loan requesters");
+    // Simulate loading with timeout
+    setTimeout(() => {
+      try {
+        // Mock data for loan requesters
+        const mockRequesters = [
+          "0x1234567890123456789012345678901234567890",
+          "0x2345678901234567890123456789012345678901",
+          "0x3456789012345678901234567890123456789012"
+        ];
+        setLoanRequesters(mockRequesters);
+      } catch (err) {
+        console.error("Error fetching loan requesters:", err);
+        setOnChainError("Error fetching loan requesters. Please try again.");
+      } finally {
+        setIsLoadingRequesters(false);
       }
-    } catch (err) {
-      console.error("Error fetching loan requesters:", err);
-      setOnChainError("Error fetching loan requesters. Please try again.");
-    } finally {
-      setIsLoadingRequesters(false);
-    }
+    }, 1000);
   };
   
-  // Function to fetch loan details for a specific requester
+  // Mock function to fetch loan details with static data
   const fetchLoanDetails = async () => {
-    if (!selectedRequester || !selectedRequester.startsWith('0x')) {
+    if (!selectedRequester && !requesterInput) {
       setOnChainError("Please enter a valid Ethereum address");
       return;
     }
@@ -207,31 +179,30 @@ export default function CommunityDashboard() {
     setIsLoadingDetails(true);
     setOnChainError("");
     
-    try {
-      const result = await refetchLoanDetails();
-      if (result.data) {
-        const details = result.data as [bigint, bigint, bigint, boolean, string];
-        setLoanDetails({
-          amount: details[0],
-          startTime: details[1],
-          repaymentAmount: details[2],
-          isRepaid: details[3],
-          description: details[4]
-        });
-      } else {
-        setOnChainError("Failed to fetch loan details");
+    // Simulate loading with timeout
+    setTimeout(() => {
+      try {
+        // Mock data for loan details
+        const mockDetails: LoanDetails = {
+          amount: BigInt(25000),
+          startTime: BigInt(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+          repaymentAmount: BigInt(27500),
+          isRepaid: false,
+          description: "Education Fees"
+        };
+        setLoanDetails(mockDetails);
+      } catch (err) {
+        console.error("Error fetching loan details:", err);
+        setOnChainError("Error fetching loan details. Please try again.");
+      } finally {
+        setIsLoadingDetails(false);
       }
-    } catch (err) {
-      console.error("Error fetching loan details:", err);
-      setOnChainError("Error fetching loan details. Please try again.");
-    } finally {
-      setIsLoadingDetails(false);
-    }
+    }, 1000);
   };
   
-  // Function to fetch loan status for a specific requester
+  // Mock function to fetch loan status with static data
   const fetchLoanStatus = async () => {
-    if (!selectedRequester || !selectedRequester.startsWith('0x')) {
+    if (!selectedRequester && !requesterInput) {
       setOnChainError("Please enter a valid Ethereum address");
       return;
     }
@@ -239,57 +210,67 @@ export default function CommunityDashboard() {
     setIsLoadingStatus(true);
     setOnChainError("");
     
-    try {
-      const result = await refetchLoanStatus();
-      if (result.data) {
-        const status = result.data as [bigint, bigint, boolean];
-        setLoanStatus({
-          amount: status[0],
-          repaymentAmount: status[1],
-          isRepaid: status[2]
-        });
-      } else {
-        setOnChainError("Failed to fetch loan status");
+    // Simulate loading with timeout
+    setTimeout(() => {
+      try {
+        // Mock data for loan status
+        const mockStatus = {
+          amount: BigInt(25000),
+          repaymentAmount: BigInt(27500),
+          isRepaid: false
+        };
+        setLoanStatus(mockStatus);
+      } catch (err) {
+        console.error("Error fetching loan status:", err);
+        setOnChainError("Error fetching loan status. Please try again.");
+      } finally {
+        setIsLoadingStatus(false);
       }
-    } catch (err) {
-      console.error("Error fetching loan status:", err);
-      setOnChainError("Error fetching loan status. Please try again.");
-    } finally {
-      setIsLoadingStatus(false);
-    }
+    }, 1000);
   };
   
-  // Function to fetch interest rate
+  // Mock function to fetch interest rate with static data
   const fetchInterestRate = async () => {
     setIsLoadingRate(true);
     setOnChainError("");
     
-    try {
-      const result = await refetchInterestRate();
-      if (result.data) {
-        setInterestRate(result.data as bigint);
-      } else {
-        setOnChainError("Failed to fetch interest rate");
+    // Simulate loading with timeout
+    setTimeout(() => {
+      try {
+        // Mock data for interest rate
+        setInterestRate(BigInt(10)); // 10% interest rate
+      } catch (err) {
+        console.error("Error fetching interest rate:", err);
+        setOnChainError("Error fetching interest rate. Please try again.");
+      } finally {
+        setIsLoadingRate(false);
       }
-    } catch (err) {
-      console.error("Error fetching interest rate:", err);
-      setOnChainError("Error fetching interest rate. Please try again.");
-    } finally {
-      setIsLoadingRate(false);
-    }
+    }, 1000);
   };
   
   // Handle requester selection
   const handleRequesterSelect = (requester: string) => {
     setSelectedRequester(requester);
-    setRequesterInput(requester);
+    setRequesterInput("");
   };
   
   // Handle manual requester input
+  const handleRequesterInput = (input: string) => {
+    setRequesterInput(input);
+    if (input.startsWith('0x') && input.length === 42) {
+      setSelectedRequester(input);
+    } else if (input === "") {
+      setSelectedRequester("");
+    }
+  };
+  
+  // Handle manual requester input submission
   const handleRequesterInputSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSelectedRequester(requesterInput);
-    fetchLoanDetails();
+    if (requesterInput.startsWith('0x')) {
+      setSelectedRequester(requesterInput);
+      fetchLoanDetails();
+    }
   };
 
   // Check if this is the first visit to show the ad
