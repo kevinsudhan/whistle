@@ -4,7 +4,7 @@
   <img src="/public/images/whistle-logo.svg" alt="Whistle Finance Logo" width="200" />
 </p>
 
-## Deployed Smart Contracts
+## Deployed Smart Contracts at westend asset hub (polkadot0
 
 - **Loan Storage Contract**: [0x96dfc97779d32f09988D6490159B4EcF4b31aBeE](https://assethub-westend.subscan.io/account/0x96dfc97779d32f09988d6490159b4ecf4b31abee)
 - **Whistle Loan Contract**: [0x62f5477Da2559EcA1Bc2412da40a3f6Bc40062d9](https://assethub-westend.subscan.io/account/0x62f5477da2559eca1bc2412da40a3f6bc40062d9)
@@ -27,7 +27,6 @@ Whistle Finance is a decentralized microfinance platform that enables communitie
 - **Frontend**: Next.js 15, React 19, TypeScript
 - **Styling**: TailwindCSS 4, Framer Motion for animations
 - **Blockchain**: Westend Asset Hub (Polkadot), ethers.js, wagmi
-- **Wallet Integration**: Dynamic SDK for seamless wallet connections
 - **Data Visualization**: ApexCharts for interactive graphs
 - **Smart Contracts**: Solidity contracts for loan management and staking
 
@@ -82,8 +81,8 @@ Whistle Finance is fully compatible with mobile wallets, including MetaMask Mobi
 ```
 whistle-finance/
 ├── contracts/                # Smart contract source files
-│   ├── WhistleStaking.sol    # Main staking contract
-│   └── $SVCE.sol            # Token contract
+│   ├──LoanStorage.sol    # Main staking contract
+│   └── WhistleLoan.sol            # Token contract
 ├── public/                   # Static assets
 │   ├── animations/           # Lottie animations
 │   ├── images/               # Images and icons
@@ -113,10 +112,10 @@ whistle-finance/
 
 ### Connecting a Wallet
 
-We use Dynamic SDK for wallet connections, which provides a seamless experience across devices:
+We use MetaMask for wallet connections, which provides a seamless experience across devices:
 
 1. Navigate to the Connect page
-2. Choose your preferred wallet (MetaMask, WalletConnect, etc.)
+2. Choose your preferred wallet (MetaMask)
 3. Approve the connection request in your wallet
 4. You'll be automatically redirected to the My Communities page
 
@@ -157,11 +156,6 @@ npm run build
 yarn build
 ```
 
-### Deploy to Vercel
-
-The easiest way to deploy is using Vercel:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Fwhistle-finance)
 
 ## 🤝 Contributing
 
@@ -181,7 +175,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - [Next.js](https://nextjs.org/) - The React framework
 - [Wagmi](https://wagmi.sh/) - React Hooks for Ethereum
-- [Dynamic SDK](https://www.dynamic.xyz/) - Wallet connection framework
 - [Polkadot](https://polkadot.network/) - Blockchain platform
 - [Framer Motion](https://www.framer.com/motion/) - Animation library
 - [TailwindCSS](https://tailwindcss.com/) - Utility-first CSS framework
