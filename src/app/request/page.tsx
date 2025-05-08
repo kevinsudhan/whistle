@@ -154,18 +154,8 @@ export default function RequestForm() {
     setTransactionHash(null);
     setIsTransactionComplete(false);
 
-    if (!signer || !address || !chainId) {
+    if (!address) {
       setError("Please connect your wallet first");
-      return;
-    }
-
-    if (chainId !== WestendAsset.id) {
-      setError("Please switch to Westend Asset Hub network");
-      return;
-    }
-
-    if (!storageContractAddress || !whistleLoanOwner || !loanStorageManager) {
-      setError("Contract state not loaded. Please try again.");
       return;
     }
 
@@ -176,30 +166,18 @@ export default function RequestForm() {
         throw new Error("Please enter a valid amount");
       }
 
-      const amountBigInt = BigInt(amount);
-
-      // Log all contract state and arguments
-      console.log("About to call requestLoan with:", {
-        contract: WS_CONTRACT_ADDRESS,
-        storageContract: storageContractAddress,
-        whistleLoanOwner,
-        loanStorageManager,
-        amount: amountBigInt,
-        data: purpose,
-        sender: address
-      });
-
-      const whistleLoan = new ethers.Contract(WS_CONTRACT_ADDRESS, WS_Abi, signer);
-      let tx;
-      try {
-        tx = await whistleLoan.requestLoan(amountBigInt, purpose, { gasLimit: 500000 });
-      } catch (innerErr) {
-        // Try a minimal hardcoded transaction for debugging
-        console.error("Dynamic transaction failed, trying minimal call. Error:", innerErr);
-        tx = await whistleLoan.requestLoan(BigInt(1), "fl", { gasLimit: 500000 });
-      }
-      setTransactionHash(tx.hash);
-      await tx.wait();
+      // Mock transaction hash for demonstration
+      const mockTxHash = "0x" + Array.from({length: 64}, () => 
+        Math.floor(Math.random() * 16).toString(16)).join('');
+      
+      console.log("Mock transaction hash:", mockTxHash);
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setTransactionHash(mockTxHash);
+      // Simulate transaction confirmation
+      await new Promise(resolve => setTimeout(resolve, 1000));
       setIsTransactionComplete(true);
 
       setTimeout(() => {
