@@ -6,7 +6,7 @@ import { FiMail } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useConnect, useSwitchChain, useAccount } from "wagmi";
-import { seiAtlantic2 } from "@/config/chains";
+import { WestendAsset } from "../../config/chains";
 
 export default function GetStarted() {
   const router = useRouter();
@@ -17,7 +17,7 @@ export default function GetStarted() {
   const [connectionSuccess, setConnectionSuccess] = useState(false);
   
   const { connect, connectors, isPending } = useConnect();
-  const { switchChain, isPending: isSwitchingChain, isSuccess: isSwitchSuccess } = useSwitchChain();
+  const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const { isConnected, chainId } = useAccount();
 
   const fadeIn = {
@@ -41,7 +41,7 @@ export default function GetStarted() {
 
   // Check if wallet is connected and on the right chain
   useEffect(() => {
-    if (isConnected && chainId === seiAtlantic2.id && connectionSuccess) {
+    if (isConnected && chainId === WestendAsset.id && connectionSuccess) {
       // Add a small delay to ensure UI updates before navigation
       const timer = setTimeout(() => {
         router.push('/my-communities');
@@ -76,14 +76,14 @@ export default function GetStarted() {
       }
       
       // Switch to SEI Atlantic-2 testnet
-      await switchChain({ chainId: seiAtlantic2.id });
+      await switchChain({ chainId: WestendAsset.id });
       
       // Wait a moment to ensure chain switch is complete
       await new Promise(resolve => setTimeout(resolve, 500));
       
       // Check if we're on the right chain
-      if (chainId !== seiAtlantic2.id) {
-        throw new Error("Failed to switch to SEI Atlantic-2 network. Please try again.");
+      if (chainId !== WestendAsset.id) {
+        throw new Error("Failed to switch to WestendAsset network. Please try again.");
       }
       
       // Mark connection as successful
