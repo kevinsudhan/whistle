@@ -44,16 +44,19 @@ export default function LendPage() {
   
   const { address, isConnected } = useAccount();
   
-  // Mock data for loan requesters instead of on-chain fetching
-  const loanRequesters = [
-    "0x1234567890123456789012345678901234567890",
-    "0x2345678901234567890123456789012345678901",
-    "0x3456789012345678901234567890123456789012"
-  ];
-  const isLoanRequestersError = false;
+  // Read contract data for loan requesters
+  const { data: loanRequesters, isError: isLoanRequestersError } = useReadContract({
+    address: WS_CONTRACT_ADDRESS as `0x${string}`,
+    abi: WS_Abi,
+    functionName: 'getAllLoanRequesters',
+  });
   
-  // Mock data for interest rate
-  const interestRate = 10; // 10% interest rate
+  // Read contract data for interest rate
+  const { data: interestRate } = useReadContract({
+    address: WS_CONTRACT_ADDRESS as `0x${string}`,
+    abi: WS_Abi,
+    functionName: 'getInterestRate',
+  });
   
   // Write contract function
   const { writeContractAsync } = useWriteContract();
@@ -233,12 +236,11 @@ export default function LendPage() {
       
       if (action === 'stake') {
         // Call the stakeForLoan function from the contract
-        // The stakeForLoan function expects a loanId (uint256) not an address
         const hash = await writeContractAsync({
           address: WS_CONTRACT_ADDRESS as `0x${string}`,
           abi: WS_Abi,
           functionName: 'stakeForLoan',
-          args: [BigInt(selectedLoanRequest.id)], // Convert ID to BigInt for uint256
+          args: [selectedLoanRequest.borrowerAddress as `0x${string}`],
           value: parseEther("0.01"), // Small amount of ETH for staking
           // Use the MetaMask compatible configuration
           ...createMetaMaskCompatibleConfig()
